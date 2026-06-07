@@ -18,9 +18,21 @@ constraints. Framework targets decide how to materialize that intent.
    - reports diagnostics with stable paths
 3. Targets
    - React AntD source compiler
+   - React Material UI source compiler
    - Angular source compiler
+   - Android native target model
    - TUI model compiler
    - future: Vue, native mobile, CLI forms, screenshots/tests
+
+## General framework
+
+The long-term design splits the protocol into semantic IR, presentation IR,
+interaction IR, and data-binding IR. Target adapters lower those IR layers into
+specific runtimes and UI libraries. React AntD, React Material UI, Angular,
+Android, and TUI should all be peers in the target layer, not concepts embedded
+inside the protocol.
+
+See `docs/general-framework-design.md`.
 
 ## Pagination rule
 

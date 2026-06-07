@@ -5,7 +5,7 @@ Renderer-neutral UI intermediate representation and compiler targets.
 `open-ui-ir` defines a middle layer above framework-specific UI code. Servers or
 tools emit one JSON document that describes resources, filters, actions, routes,
 layouts, and data bindings. Compiler targets turn that document into React AntD,
-Angular, TUI models, or other renderers.
+React Material UI, Angular, Android, TUI models, or other renderers.
 
 ## Why
 
@@ -30,7 +30,7 @@ server schema / YAML / JSON / GraphQL
           |
     compiler targets
           |
- React AntD | Angular | TUI | custom renderer
+ React AntD | React MUI | Angular | Android | TUI | custom renderer
 ```
 
 ## Packages
@@ -42,6 +42,10 @@ server schema / YAML / JSON / GraphQL
 | `@open-ui-ir/react-antd` | compiler target that emits React AntD source |
 | `@open-ui-ir/angular` | compiler target that emits Angular standalone component source |
 | `@open-ui-ir/tui` | compiler target that emits a terminal UI model |
+
+See [docs/general-framework-design.md](docs/general-framework-design.md) for the
+broader compiler architecture: semantic IR, presentation IR, interaction IR,
+data-binding IR, and target lowering for multiple frameworks and UI libraries.
 
 ## Status
 
