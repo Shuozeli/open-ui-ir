@@ -24,6 +24,7 @@
     "vitest": "^3.0.0"
   },
   "peerDependencies": {
+    "@ant-design/charts": ">=2",
     "antd": ">=5",
     "react": ">=18"
   }

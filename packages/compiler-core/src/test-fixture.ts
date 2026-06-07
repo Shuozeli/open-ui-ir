@@ -6,8 +6,8 @@ export const exampleDocument: OpenUiDocument = {
   app_name: "jobs",
   display_name: "Jobs",
   capabilities: {
-    layouts: ["crud_list", "detail_page"],
-    component_kinds: ["filter_bar", "table", "detail_header"],
+    layouts: ["crud_list", "detail_page", "dashboard"],
+    component_kinds: ["filter_bar", "table", "detail_header", "metric_row", "chart"],
     field_renderers: [
       { kind: "text", description: "Plain text" },
       { kind: "datetime", description: "Date/time" },
@@ -79,6 +79,38 @@ export const exampleDocument: OpenUiDocument = {
       components: [
         { id: "filters", kind: "filter_bar", props: {} },
         { id: "table", kind: "table", data_ref: "rows", props: { collection: "jobPostings" } },
+      ],
+    },
+    {
+      route: "/jobs/analytics",
+      title: "Job Analytics",
+      layout: "dashboard",
+      navigation: { group: "Jobs", order: 2 },
+      data_bindings: [
+        {
+          name: "series",
+          query: {
+            transport: "graphql",
+            operation: "jobPostingSeries",
+            result_path: "jobPostingSeries.points",
+            variables: {},
+          },
+        },
+      ],
+      components: [
+        {
+          id: "postings-by-day",
+          kind: "chart",
+          data_ref: "series",
+          props: {
+            chart: {
+              kind: "line",
+              title: "Postings by Day",
+              encoding: { x: "day", y: "count", color: "company" },
+              height: 320,
+            },
+          },
+        },
       ],
     },
   ],

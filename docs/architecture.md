@@ -18,6 +18,7 @@ constraints. Framework targets decide how to materialize that intent.
    - reports diagnostics with stable paths
 3. Targets
    - React AntD source compiler
+     - includes AntV / `@ant-design/charts` lowering for chart intent
    - React Material UI source compiler
    - Angular source compiler
    - Android native target model
@@ -48,3 +49,12 @@ ORDER BY last_enriched_at DESC, name ASC
 ```
 
 The page token stores the last row's full key tuple, not an offset.
+
+## Visualization rule
+
+Chart semantics live in the protocol as target-neutral `chart` components:
+`line`, `bar`, `area`, `pie`, `heatmap`, and `scatter`. Concrete target adapters
+lower these intents to library-specific components. For example, React AntD
+lowers chart intent to `@ant-design/charts`, while a future Angular target can
+lower the same intent to an Angular charting library without changing the source
+IR.

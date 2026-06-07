@@ -209,6 +209,7 @@ React AntD output:
 
 - `Table`
 - compact filter controls
+- AntV / `@ant-design/charts` for chart intent
 - React Router navigation
 - TanStack Query loader
 
@@ -252,6 +253,25 @@ a request fingerprint for parent/filter/order stability.
 
 If the visible order key is not unique, the compiler/validator must require a
 stable tie-breaker such as `name`.
+
+## Visualization Contract
+
+Visualization is a presentation intent, not a dependency on a specific charting
+library. The protocol should describe:
+
+- chart kind: line, bar, area, pie, heatmap, scatter
+- encodings: x, y, value, category, color, size
+- data binding
+- title and sizing hints
+- stacking/smoothing hints
+
+Target adapters decide how to render this:
+
+- React AntD -> `@ant-design/charts`
+- React MUI -> a MUI-compatible chart library or adapter
+- Angular -> Angular chart adapter
+- Android -> Compose chart target
+- TUI -> compact ASCII/sparkline/summary model
 
 ## Validation Rules
 

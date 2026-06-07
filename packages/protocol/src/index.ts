@@ -1,6 +1,14 @@
 export const PROTOCOL_VERSION = "open-ui-ir.v1";
 
 export type LayoutKind = "crud_list" | "detail_page" | "dashboard";
+export type ComponentKind =
+  | "filter_bar"
+  | "table"
+  | "detail_header"
+  | "metric_row"
+  | "chart"
+  | "chart_grid";
+export type ChartKind = "line" | "bar" | "area" | "pie" | "heatmap" | "scatter";
 export type FilterKind = "text" | "select" | "multi_select" | "date_range" | "boolean";
 export type ActionMethod = "get" | "create" | "update" | "delete" | "custom";
 export type SortDirection = "asc" | "desc";
@@ -116,9 +124,44 @@ export interface DataBinding {
 
 export interface ComponentSpec {
   id: string;
-  kind: string;
+  kind: ComponentKind | string;
   data_ref?: string;
-  props: Record<string, unknown>;
+  props: ComponentProps;
+}
+
+export type ComponentProps = Record<string, unknown> | ChartComponentProps | MetricRowProps;
+
+export interface MetricRowProps {
+  metrics: MetricSpec[];
+}
+
+export interface MetricSpec {
+  id: string;
+  label: string;
+  value_path: string;
+  format?: "number" | "percent" | "currency" | "duration" | "datetime";
+}
+
+export interface ChartComponentProps {
+  chart: ChartSpec;
+}
+
+export interface ChartSpec {
+  kind: ChartKind;
+  title?: string;
+  encoding: ChartEncoding;
+  height?: number;
+  stack?: boolean;
+  smooth?: boolean;
+}
+
+export interface ChartEncoding {
+  x?: string;
+  y?: string;
+  value?: string;
+  category?: string;
+  color?: string;
+  size?: string;
 }
 
 export interface ActionSpec {

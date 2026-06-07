@@ -9,4 +9,11 @@ describe("reactAntdTarget", () => {
     expect(output.files[0]!.path).toBe("react-antd/jobs-postings.tsx");
     expect(output.files[0]!.content).toContain("antd");
   });
+
+  it("lowers chart intent to AntV charts", () => {
+    const output = compileDocument(exampleDocument, reactAntdTarget);
+    const analytics = output.files.find((file) => file.path === "react-antd/jobs-analytics.tsx");
+    expect(analytics?.content).toContain("@ant-design/charts");
+    expect(analytics?.content).toContain("<Line");
+  });
 });

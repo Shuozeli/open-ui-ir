@@ -30,11 +30,13 @@ function compileComponent(title: string): string {
           </tr>
         </tbody>
       </table>
+      <pre *ngIf="chartCount > 0">{{ chartCount }} chart component(s) require an Angular chart target adapter.</pre>
     </section>
   \`
 })
 export class GeneratedPageComponent {
   @Input() rows: Array<Record<string, unknown>> = [];
+  @Input() chartCount = 0;
 }
 `;
 }

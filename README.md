@@ -15,6 +15,7 @@ Most CRUD and dashboard UIs repeat the same structure:
   `next_page_token`
 - filter bars
 - tables and detail pages
+- charts and dashboard visualizations
 - actions
 - route/navigation metadata
 - renderer-specific widgets
@@ -42,6 +43,10 @@ server schema / YAML / JSON / GraphQL
 | `@open-ui-ir/react-antd` | compiler target that emits React AntD source |
 | `@open-ui-ir/angular` | compiler target that emits Angular standalone component source |
 | `@open-ui-ir/tui` | compiler target that emits a terminal UI model |
+
+Visualization support currently includes target-neutral `chart` intent with
+`line`, `bar`, `area`, `pie`, `heatmap`, and `scatter` chart kinds. The React
+AntD target lowers these to `@ant-design/charts` components.
 
 See [docs/general-framework-design.md](docs/general-framework-design.md) for the
 broader compiler architecture: semantic IR, presentation IR, interaction IR,
