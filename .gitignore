@@ -2,4 +2,8 @@ node_modules/
 dist/
 coverage/
 *.tsbuildinfo
+packages/*/src/**/*.js
+packages/*/src/**/*.js.map
+packages/*/src/**/*.d.ts
+packages/*/src/**/*.d.ts.map
 .DS_Store
