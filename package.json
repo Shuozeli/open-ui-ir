@@ -1,0 +1,21 @@
+{
+  "name": "open-ui-ir",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Renderer-neutral UI intermediate representation and compiler targets for React AntD, Angular, TUI, and server-driven apps.",
+  "type": "module",
+  "scripts": {
+    "build": "tsc -b",
+    "test": "pnpm -r test",
+    "typecheck": "tsc -b"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "packageManager": "pnpm@10.0.0"
+}

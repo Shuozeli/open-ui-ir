@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "baseUrl": ".",
+    "paths": {
+      "@open-ui-ir/protocol": ["packages/protocol/src/index.ts"],
+      "@open-ui-ir/compiler-core": ["packages/compiler-core/src/index.ts"],
+      "@open-ui-ir/compiler-core/test-fixture": ["packages/compiler-core/src/test-fixture.ts"],
+      "@open-ui-ir/react-antd": ["packages/react-antd/src/index.ts"],
+      "@open-ui-ir/angular": ["packages/angular/src/index.ts"],
+      "@open-ui-ir/tui": ["packages/tui/src/index.ts"]
+    },
+    "types": ["node"],
+    "composite": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "skipLibCheck": true
+  }
+}

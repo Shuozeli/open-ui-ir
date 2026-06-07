@@ -1,0 +1,10 @@
+{
+  "files": [],
+  "references": [
+    { "path": "packages/protocol" },
+    { "path": "packages/compiler-core" },
+    { "path": "packages/react-antd" },
+    { "path": "packages/angular" },
+    { "path": "packages/tui" }
+  ]
+}
