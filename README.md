@@ -72,7 +72,7 @@ pnpm build
 The `examples/` directory contains JSON IR demos that are validated and compiled
 in CI by `@open-ui-ir/demo-suite`:
 
-- `job-postings.ui.json` -- compact CRUD + dashboard chart example.
+- `product-catalog.ui.json` -- compact CRUD + dashboard chart example.
 - `all-features.ui.json` -- broader demo covering GraphQL and REST bindings,
   keyset pagination, text/select/multi-select/date/boolean filters, custom and
   delete actions, list/detail/dashboard routes, metrics, and line/pie/heatmap

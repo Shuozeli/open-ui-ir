@@ -3,45 +3,48 @@ import { PROTOCOL_VERSION } from "@open-ui-ir/protocol";
 
 export const exampleDocument: OpenUiDocument = {
   protocol_version: PROTOCOL_VERSION,
-  app_name: "jobs",
-  display_name: "Jobs",
+  app_name: "product-catalog",
+  display_name: "Product Catalog",
   capabilities: {
     layouts: ["crud_list", "detail_page", "dashboard"],
     component_kinds: ["filter_bar", "table", "detail_header", "metric_row", "chart"],
     field_renderers: [
       { kind: "text", description: "Plain text" },
       { kind: "datetime", description: "Date/time" },
+      { kind: "number", description: "Number" },
     ],
     filter_kinds: ["text", "select"],
     action_methods: ["get"],
   },
   collections: [
     {
-      name: "jobPostings",
-      resource_type: "JobPosting",
-      plural_field: "job_postings",
+      name: "products",
+      resource_type: "Product",
+      plural_field: "products",
       list: {
         transport: "graphql",
-        operation: "jobPostings",
-        result_path: "jobPostings.job_postings",
+        operation: "products",
+        result_path: "products.products",
         variables: {},
       },
       fields: [
         { name: "name", value_type: "string", renderer: "text", required: true, output_only: true },
         { name: "title", value_type: "string", renderer: "text", required: true, output_only: false },
-        { name: "company", value_type: "string", renderer: "text", required: true, output_only: false },
-        { name: "last_seen_at", value_type: "datetime", renderer: "datetime", required: false, output_only: true },
+        { name: "category", value_type: "string", renderer: "text", required: true, output_only: false },
+        { name: "price", value_type: "number", renderer: "number", required: false, output_only: false },
+        { name: "updated_at", value_type: "datetime", renderer: "datetime", required: false, output_only: true },
       ],
       filters: [
         { name: "q", label: "Search", kind: "text", cel_field: "title" },
         {
-          name: "status",
-          label: "Status",
+          name: "category",
+          label: "Category",
           kind: "select",
-          cel_field: "status",
+          cel_field: "category",
           options: [
-            { label: "Active", value: "active" },
-            { label: "Closed", value: "closed" },
+            { label: "Hardware", value: "hardware" },
+            { label: "Software", value: "software" },
+            { label: "Services", value: "services" },
           ],
         },
       ],
@@ -52,7 +55,7 @@ export const exampleDocument: OpenUiDocument = {
         page_token_param: "page_token",
         next_page_token_path: "next_page_token",
         order_by: [
-          { field: "last_seen_at", direction: "desc" },
+          { field: "updated_at", direction: "desc" },
           { field: "name", direction: "asc" },
         ],
         unique_key_fields: ["name"],
@@ -61,52 +64,52 @@ export const exampleDocument: OpenUiDocument = {
   ],
   routes: [
     {
-      route: "/jobs/postings",
-      title: "Job Postings",
+      route: "/products",
+      title: "Products",
       layout: "crud_list",
-      navigation: { group: "Jobs", order: 1 },
+      navigation: { group: "Catalog", order: 1 },
       data_bindings: [
         {
           name: "rows",
           query: {
             transport: "graphql",
-            operation: "jobPostings",
-            result_path: "jobPostings.job_postings",
+            operation: "products",
+            result_path: "products.products",
             variables: {},
           },
         },
       ],
       components: [
         { id: "filters", kind: "filter_bar", props: {} },
-        { id: "table", kind: "table", data_ref: "rows", props: { collection: "jobPostings" } },
+        { id: "table", kind: "table", data_ref: "rows", props: { collection: "products" } },
       ],
     },
     {
-      route: "/jobs/analytics",
-      title: "Job Analytics",
+      route: "/products/analytics",
+      title: "Product Analytics",
       layout: "dashboard",
-      navigation: { group: "Jobs", order: 2 },
+      navigation: { group: "Catalog", order: 2 },
       data_bindings: [
         {
           name: "series",
           query: {
             transport: "graphql",
-            operation: "jobPostingSeries",
-            result_path: "jobPostingSeries.points",
+            operation: "productSalesSeries",
+            result_path: "productSalesSeries.points",
             variables: {},
           },
         },
       ],
       components: [
         {
-          id: "postings-by-day",
+          id: "sales-by-day",
           kind: "chart",
           data_ref: "series",
           props: {
             chart: {
               kind: "line",
-              title: "Postings by Day",
-              encoding: { x: "day", y: "count", color: "company" },
+              title: "Sales by Day",
+              encoding: { x: "day", y: "sales", color: "category" },
               height: 320,
             },
           },

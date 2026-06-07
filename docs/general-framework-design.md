@@ -19,7 +19,7 @@ into different runtimes and UI libraries:
 - custom embedded renderers
 
 The framework should let a product team define CRUD, dashboard, detail, wizard,
-workflow, feed, and form experiences once while preserving each target's native
+workflow, activity-stream, and form experiences once while preserving each target's native
 patterns.
 
 ## Non-Goals
@@ -105,7 +105,7 @@ Interaction IR describes behavior that must compile consistently:
 - focus policy
 - undo/redo where supported
 
-This prevents the current class of bugs where a feed item looks clickable but
+This prevents the current class of bugs where an activity item looks clickable but
 does not have a valid target action.
 
 ### 4. Data Binding IR
@@ -115,7 +115,7 @@ Data binding describes how UI state maps to data operations:
 - GraphQL operation + variables
 - REST resource path + query/body
 - gRPC method + request shape
-- local fixture for tests
+- static fixture for tests
 - polling or subscription policy
 - result paths
 - error mapping
@@ -197,10 +197,10 @@ Input semantic intent:
 ```json
 {
   "kind": "collection_page",
-  "resource": "jobPostings",
-  "primary_action": "jobPostings.create",
+  "resource": "products",
+  "primary_action": "products.create",
   "filters": ["q", "status"],
-  "row_navigation": "/jobs/postings/{name}",
+  "row_navigation": "/products/{name}",
   "pagination": "keyset"
 }
 ```
@@ -293,4 +293,4 @@ The validator should fail documents that:
 3. Add React MUI as the second React UI-library target.
 4. Add CLI: `open-ui-ir validate`, `open-ui-ir compile --target react-antd`.
 5. Add Android target model with a generated Compose skeleton.
-6. Backport the dragbv2 UI document into the generalized IR as a real fixture.
+6. Add a non-domain-specific fixture set that exercises every stable IR feature.

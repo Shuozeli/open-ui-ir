@@ -7,6 +7,6 @@ describe("tuiTarget", () => {
   it("compiles screen model", () => {
     const output = compileDocument(exampleDocument, tuiTarget);
     expect(output.files[0]!.path).toBe("tui/screens.json");
-    expect(output.files[0]!.content).toContain("Job Postings");
+    expect(output.files[0]!.content).toContain("Products");
   });
 });

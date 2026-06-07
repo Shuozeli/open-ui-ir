@@ -1,7 +1,7 @@
 {
   "protocol_version": "open-ui-ir.v1",
-  "app_name": "ops-intelligence",
-  "display_name": "Ops Intelligence",
+  "app_name": "service-desk-demo",
+  "display_name": "Service Desk Demo",
   "capabilities": {
     "layouts": ["crud_list", "detail_page", "dashboard"],
     "component_kinds": ["filter_bar", "table", "detail_header", "metric_row", "chart", "chart_grid"],
@@ -69,7 +69,7 @@
           "cel_field": "service",
           "options": [
             { "label": "API", "value": "api" },
-            { "label": "Crawler", "value": "crawler" },
+            { "label": "Batch Worker", "value": "batch-worker" },
             { "label": "Worker", "value": "worker" }
           ]
         },
