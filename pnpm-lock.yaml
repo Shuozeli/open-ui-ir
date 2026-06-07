@@ -47,6 +47,31 @@ importers:
         specifier: ^3.0.0
         version: 3.2.6(@types/node@22.19.20)
 
+  packages/demo-suite:
+    dependencies:
+      '@open-ui-ir/angular':
+        specifier: workspace:*
+        version: link:../angular
+      '@open-ui-ir/compiler-core':
+        specifier: workspace:*
+        version: link:../compiler-core
+      '@open-ui-ir/protocol':
+        specifier: workspace:*
+        version: link:../protocol
+      '@open-ui-ir/react-antd':
+        specifier: workspace:*
+        version: link:../react-antd
+      '@open-ui-ir/tui':
+        specifier: workspace:*
+        version: link:../tui
+    devDependencies:
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vitest:
+        specifier: ^3.0.0
+        version: 3.2.6(@types/node@22.19.20)
+
   packages/protocol:
     devDependencies:
       typescript:

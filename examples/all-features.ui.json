@@ -1,0 +1,250 @@
+{
+  "protocol_version": "open-ui-ir.v1",
+  "app_name": "ops-intelligence",
+  "display_name": "Ops Intelligence",
+  "capabilities": {
+    "layouts": ["crud_list", "detail_page", "dashboard"],
+    "component_kinds": ["filter_bar", "table", "detail_header", "metric_row", "chart", "chart_grid"],
+    "field_renderers": [
+      { "kind": "text", "description": "Plain text" },
+      { "kind": "badge", "description": "Status badge" },
+      { "kind": "datetime", "description": "Date/time" },
+      { "kind": "number", "description": "Number" },
+      { "kind": "external_link", "description": "External URL" },
+      { "kind": "json", "description": "Structured JSON" }
+    ],
+    "filter_kinds": ["text", "select", "multi_select", "date_range", "boolean"],
+    "action_methods": ["get", "create", "update", "delete", "custom"]
+  },
+  "collections": [
+    {
+      "name": "incidentEvents",
+      "resource_type": "IncidentEvent",
+      "plural_field": "incident_events",
+      "list": {
+        "transport": "graphql",
+        "operation": "incidentEvents",
+        "result_path": "incidentEvents.incident_events",
+        "variables": {
+          "page_size": "$page.page_size",
+          "page_token": "$page.page_token",
+          "filter": "$filters"
+        }
+      },
+      "get": {
+        "transport": "graphql",
+        "operation": "incidentEvent",
+        "result_path": "incidentEvent",
+        "variables": {
+          "name": "$route.name"
+        }
+      },
+      "fields": [
+        { "name": "name", "value_type": "string", "renderer": "text", "required": true, "output_only": true },
+        { "name": "title", "value_type": "string", "renderer": "text", "required": true, "output_only": false },
+        { "name": "service", "value_type": "string", "renderer": "badge", "required": true, "output_only": false },
+        { "name": "severity", "value_type": "string", "renderer": "badge", "required": true, "output_only": false },
+        { "name": "acknowledged", "value_type": "boolean", "renderer": "badge", "required": false, "output_only": false },
+        { "name": "created_at", "value_type": "datetime", "renderer": "datetime", "required": true, "output_only": true },
+        { "name": "external_url", "value_type": "string", "renderer": "external_link", "required": false, "output_only": false },
+        { "name": "payload", "value_type": "json", "renderer": "json", "required": false, "output_only": true }
+      ],
+      "filters": [
+        { "name": "q", "label": "Search", "kind": "text", "cel_field": "title" },
+        {
+          "name": "severity",
+          "label": "Severity",
+          "kind": "multi_select",
+          "cel_field": "severity",
+          "options": [
+            { "label": "Critical", "value": "critical" },
+            { "label": "Warning", "value": "warning" },
+            { "label": "Info", "value": "info" }
+          ]
+        },
+        {
+          "name": "service",
+          "label": "Service",
+          "kind": "select",
+          "cel_field": "service",
+          "options": [
+            { "label": "API", "value": "api" },
+            { "label": "Crawler", "value": "crawler" },
+            { "label": "Worker", "value": "worker" }
+          ]
+        },
+        { "name": "created", "label": "Created", "kind": "date_range", "cel_field": "created_at" },
+        { "name": "acknowledged", "label": "Acknowledged", "kind": "boolean", "cel_field": "acknowledged" }
+      ],
+      "actions": [
+        {
+          "name": "acknowledge",
+          "label": "Acknowledge",
+          "method": "custom",
+          "binding": {
+            "transport": "rest",
+            "operation": "POST /api/incidents/{name}:acknowledge",
+            "result_path": "incident",
+            "variables": {
+              "name": "$resource.name"
+            }
+          }
+        },
+        {
+          "name": "delete",
+          "label": "Delete",
+          "method": "delete",
+          "binding": {
+            "transport": "rest",
+            "operation": "DELETE /api/incidents/{name}",
+            "result_path": "",
+            "variables": {
+              "name": "$resource.name"
+            }
+          }
+        }
+      ],
+      "pagination": {
+        "kind": "keyset",
+        "page_size_param": "page_size",
+        "page_token_param": "page_token",
+        "next_page_token_path": "next_page_token",
+        "order_by": [
+          { "field": "created_at", "direction": "desc" },
+          { "field": "name", "direction": "asc" }
+        ],
+        "unique_key_fields": ["name"]
+      }
+    }
+  ],
+  "routes": [
+    {
+      "route": "/incidents",
+      "title": "Incident Events",
+      "layout": "crud_list",
+      "navigation": { "group": "Operations", "order": 1 },
+      "data_bindings": [
+        {
+          "name": "incidents",
+          "query": {
+            "transport": "graphql",
+            "operation": "incidentEvents",
+            "result_path": "incidentEvents.incident_events",
+            "variables": {
+              "page_size": "$page.page_size",
+              "page_token": "$page.page_token",
+              "filter": "$filters"
+            }
+          }
+        }
+      ],
+      "components": [
+        { "id": "filters", "kind": "filter_bar", "props": { "collection": "incidentEvents" } },
+        { "id": "table", "kind": "table", "data_ref": "incidents", "props": { "collection": "incidentEvents", "row_navigation": "/incidents/{name}" } }
+      ]
+    },
+    {
+      "route": "/incidents/:name",
+      "title": "Incident Detail",
+      "layout": "detail_page",
+      "navigation": { "group": "Operations", "order": 2 },
+      "data_bindings": [
+        {
+          "name": "incident",
+          "query": {
+            "transport": "graphql",
+            "operation": "incidentEvent",
+            "result_path": "incidentEvent",
+            "variables": {
+              "name": "$route.name"
+            }
+          }
+        }
+      ],
+      "components": [
+        { "id": "header", "kind": "detail_header", "data_ref": "incident", "props": { "title_path": "title", "subtitle_path": "service" } },
+        { "id": "payload", "kind": "table", "data_ref": "incident.payload", "props": { "collection": "incidentEvents" } }
+      ]
+    },
+    {
+      "route": "/incidents/dashboard",
+      "title": "Incident Dashboard",
+      "layout": "dashboard",
+      "navigation": { "group": "Operations", "order": 3 },
+      "data_bindings": [
+        {
+          "name": "stats",
+          "query": {
+            "transport": "rest",
+            "operation": "GET /api/incidents/dashboard",
+            "result_path": "dashboard",
+            "variables": {}
+          }
+        },
+        {
+          "name": "series",
+          "query": {
+            "transport": "graphql",
+            "operation": "incidentSeries",
+            "result_path": "incidentSeries.points",
+            "variables": {}
+          }
+        }
+      ],
+      "components": [
+        {
+          "id": "kpis",
+          "kind": "metric_row",
+          "data_ref": "stats",
+          "props": {
+            "metrics": [
+              { "id": "open", "label": "Open", "value_path": "open_count", "format": "number" },
+              { "id": "critical", "label": "Critical", "value_path": "critical_count", "format": "number" },
+              { "id": "ack_rate", "label": "Ack Rate", "value_path": "ack_rate", "format": "percent" }
+            ]
+          }
+        },
+        {
+          "id": "incidents-by-day",
+          "kind": "chart",
+          "data_ref": "series",
+          "props": {
+            "chart": {
+              "kind": "line",
+              "title": "Incidents by Day",
+              "encoding": { "x": "day", "y": "count", "color": "severity" },
+              "height": 320,
+              "smooth": true
+            }
+          }
+        },
+        {
+          "id": "severity-share",
+          "kind": "chart",
+          "data_ref": "series",
+          "props": {
+            "chart": {
+              "kind": "pie",
+              "title": "Severity Share",
+              "encoding": { "value": "count", "category": "severity" },
+              "height": 260
+            }
+          }
+        },
+        {
+          "id": "service-heatmap",
+          "kind": "chart",
+          "data_ref": "series",
+          "props": {
+            "chart": {
+              "kind": "heatmap",
+              "title": "Service Heatmap",
+              "encoding": { "x": "service", "y": "hour", "color": "count" },
+              "height": 300
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
