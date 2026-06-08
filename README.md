@@ -73,7 +73,16 @@ The `examples/` directory contains JSON IR demos that are validated and compiled
 in CI by `@open-ui-ir/demo-suite`:
 
 - `product-catalog.ui.json` -- compact CRUD + dashboard chart example.
-- `all-features.ui.json` -- broader demo covering GraphQL and REST bindings,
-  keyset pagination, text/select/multi-select/date/boolean filters, custom and
-  delete actions, list/detail/dashboard routes, metrics, and line/pie/heatmap
-  chart intent.
+- `all-features.ui.json` -- broader demo covering GraphQL-pushed UI/data bindings,
+  keyset pagination, text/select/multi-select/date/boolean filters, get/create/
+  update/delete/custom actions, i18n metadata, list/detail/dashboard routes,
+  metrics, chart grid, and line/bar/area/pie/heatmap/scatter/radar/rose/
+  radial-bar/funnel/treemap/word-cloud/gauge/liquid chart intent.
+
+`demo-backend/` is a Rust GraphQL demo backend that exposes both the UI Spike
+document and the demo resource operations. `demo-ui/` is a fixed React AntD
+renderer shell: it fetches the Spike through GraphQL, renders the pushed layout,
+and executes the GraphQL bindings declared by the Spike. The demo demonstrates
+action modals, row selection, detail navigation, dashboard charts, locale
+switching, and the distinction between translated UI chrome, translated enum
+labels, and untranslated user-entered data.

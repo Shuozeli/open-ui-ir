@@ -17,7 +17,7 @@ export const reactAntdTarget: CompilerTarget = {
 
 function compileRoute(title: string, components: ComponentSpec[]): string {
   const hasChart = components.some((component) => component.kind === "chart");
-  return `${hasChart ? 'import { Column, Heatmap, Line, Pie, Scatter } from "@ant-design/charts";\n' : ""}import { Card, Table, Typography } from "antd";
+  return `${hasChart ? 'import { Column, Funnel, Gauge, Heatmap, Line, Liquid, Pie, Radar, RadialBar, Rose, Scatter, Treemap, WordCloud } from "@ant-design/charts";\n' : ""}import { Card, Table, Typography } from "antd";
 
 export function GeneratedPage({ rows = [], loading = false }: { rows?: unknown[]; loading?: boolean }) {
   return (
@@ -86,6 +86,22 @@ function antvComponent(kind: ChartKind): string {
       return "Heatmap";
     case "scatter":
       return "Scatter";
+    case "radar":
+      return "Radar";
+    case "rose":
+      return "Rose";
+    case "radial_bar":
+      return "RadialBar";
+    case "funnel":
+      return "Funnel";
+    case "treemap":
+      return "Treemap";
+    case "word_cloud":
+      return "WordCloud";
+    case "gauge":
+      return "Gauge";
+    case "liquid":
+      return "Liquid";
   }
 }
 

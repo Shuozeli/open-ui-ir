@@ -31,7 +31,72 @@ patterns.
   not own the transport.
 - Becoming a single component library. Component libraries are compiler targets.
 
-## Architecture
+## Runtime Architecture
+
+The runtime architecture is server-pushed UI, not frontend-owned product logic.
+The frontend ships as a stable renderer shell. Product teams and backend
+services describe what to render by publishing a Spike/Open UI IR document
+through GraphQL.
+
+```text
+Backend service
+  |
+  |-- GraphQL schema + resolvers
+  |     - resources
+  |     - list/get/create/update/delete/action operations
+  |     - filter metadata
+  |     - pagination contract
+  |
+  |-- uiSpike GraphQL query
+        - routes
+        - pages
+        - layouts
+        - fields
+        - actions
+        - charts
+        - empty/error/loading states
+        - i18n message catalog
+        - bindings to GraphQL operations
+  |
+  v
+Fixed frontend renderer
+  |
+  |-- fetches Spike/Open UI IR through GraphQL
+  |-- renders routes and layouts from IR
+  |-- executes GraphQL operations declared by IR
+  |-- maps semantic widgets to target components
+  |-- owns only generic renderer behavior
+```
+
+The frontend must not hard-code product-specific pages such as "incident
+dashboard", "feed", or "job posting". It may hard-code generic renderers such
+as `collection_page`, `detail_page`, `form`, `table`, `chart`, `action_bar`,
+and `filter_bar`. The backend pushes the composition of those generic
+renderers.
+
+Rust is not a framework requirement. The current Rust demo backend exists only
+to validate that a real backend can expose both GraphQL data operations and a
+server-pushed UI document through GraphQL. A production service could be Rust,
+Go, Java, TypeScript, Python, or anything else, as long as it publishes the same
+GraphQL/data contract and Spike/Open UI IR contract.
+
+The demo contract is intentionally GraphQL-only:
+
+```graphql
+query UiSpike {
+  uiSpike
+}
+
+query IncidentPageData {
+  incidentEvents(pageSize: 50) {
+    incidentEvents { name title severity service acknowledged createdAt }
+    nextPageToken
+  }
+  incidentDashboard { openCount criticalCount ackRate }
+}
+```
+
+## Compile-Time Architecture
 
 ```text
 Domain schema / GraphQL / OpenAPI / YAML / code
@@ -96,8 +161,10 @@ Interaction IR describes behavior that must compile consistently:
 
 - route transitions
 - row navigation
+- row selection and bulk-selection policy
 - optimistic update policy
 - confirmation dialogs
+- modal form submit lifecycle
 - action submit lifecycle
 - URL-synced filters
 - pagination state
@@ -107,6 +174,25 @@ Interaction IR describes behavior that must compile consistently:
 
 This prevents the current class of bugs where an activity item looks clickable but
 does not have a valid target action.
+
+### 3.1 Internationalization IR
+
+Internationalization must distinguish three categories:
+
+- **UI chrome**: route titles, button labels, filter labels, metric labels,
+  validation messages, empty states, and action results. These are translated by
+  message keys or fallback source strings in the IR message catalog.
+- **Domain enum values**: stable coded values such as `critical`, `api`, or
+  `batch-worker`. These should render through option/display-label maps, then
+  pass through the message catalog.
+- **User data**: user-entered titles, descriptions, external URLs, and arbitrary
+  JSON payloads. These must not be machine-translated by the renderer by default.
+  If localized user data is required, the data contract should expose localized
+  fields or a server-side localization operation.
+
+Locale-aware formatting for dates, numbers, currency, percentages, and duration
+belongs in the renderer runtime, but the requested locale comes from IR metadata
+or user preference.
 
 ### 4. Data Binding IR
 
@@ -123,6 +209,144 @@ Data binding describes how UI state maps to data operations:
 Open UI IR should keep data fetching declarative so targets can compile to
 React Query, Angular services + signals, Android repositories, or TUI async
 loaders.
+
+At runtime, the binding is also the boundary between product logic and renderer
+logic. The backend decides which GraphQL operation powers a page, which fields
+are selectable or filterable, and which mutation an action invokes. The frontend
+renderer only interprets that binding.
+
+Example runtime binding:
+
+```json
+{
+  "id": "incident_events.list",
+  "transport": "graphql",
+  "operation": "query IncidentEvents($pageSize: Int, $pageToken: String, $filter: String) { incidentEvents(pageSize: $pageSize, pageToken: $pageToken, filter: $filter) { incidentEvents { name title severity status createdAt } nextPageToken } }",
+  "result_path": "incidentEvents.incidentEvents",
+  "pagination": {
+    "next_page_token_path": "incidentEvents.nextPageToken"
+  }
+}
+```
+
+### 4.1 Renderer Debug Runtime
+
+The fixed frontend renderer should expose a small debug runtime on `window` so
+operators can inspect what the backend pushed and drive the renderer from the
+browser console. This debug runtime is a renderer capability, not product
+business logic.
+
+The global binding should use a stable name:
+
+```ts
+window.__OPEN_UI_IR_DEBUG__
+```
+
+The debug runtime has three goals:
+
+- inspect the server-pushed UI Spike without digging through React internals
+- inspect data binding metadata and result shapes without logging real user data
+- drive renderer state from the console, such as opening a route, panel, action,
+  or selected resource
+
+It must not expose raw row payloads by default. Data debugging should report
+operation names, binding ids, result paths, counts, field names, pagination
+tokens, loading/error state, and timestamps. If a future renderer needs raw data
+inspection, that should require an explicit opt-in flag for local development.
+
+Proposed console API:
+
+```ts
+interface OpenUiIrDebugRuntime {
+  version: "open-ui-ir.debug.v1";
+
+  inspect(): DebugSnapshot;
+  uiSpike(): OpenUiDocument | null;
+  uiSummary(): UiSpikeSummary;
+  dataSummary(): DataBindingSummary[];
+  routes(): RouteSummary[];
+  actions(collectionName?: string): ActionSummary[];
+  panels(route?: string): PanelSummary[];
+
+  openRoute(route: string): void;
+  openPanel(panelId: string): void;
+  openAction(actionName: string): void;
+  selectResource(name: string): void;
+  setLocale(locale: string): void;
+  setFilter(name: string, value: unknown): void;
+  clearFilters(): void;
+
+  subscribe(listener: (snapshot: DebugSnapshot) => void): () => void;
+}
+```
+
+Example console usage:
+
+```js
+__OPEN_UI_IR_DEBUG__.uiSummary()
+__OPEN_UI_IR_DEBUG__.dataSummary()
+__OPEN_UI_IR_DEBUG__.routes()
+__OPEN_UI_IR_DEBUG__.actions("incidentEvents")
+__OPEN_UI_IR_DEBUG__.openRoute("/incidents/dashboard")
+__OPEN_UI_IR_DEBUG__.openAction("create")
+__OPEN_UI_IR_DEBUG__.selectResource("incidents/inc-1002")
+```
+
+The `DebugSnapshot` should be intentionally small:
+
+```ts
+interface DebugSnapshot {
+  active_route: string;
+  active_panel?: string;
+  active_action?: string;
+  selected_resource_name?: string;
+  locale: string;
+  ui_spike: UiSpikeSummary;
+  data_bindings: DataBindingSummary[];
+  renderer_state: {
+    filters: Record<string, unknown>;
+    loading_bindings: string[];
+    failed_bindings: Array<{ binding: string; message: string }>;
+  };
+}
+```
+
+`DataBindingSummary` must summarize data without leaking data rows:
+
+```ts
+interface DataBindingSummary {
+  name: string;
+  transport: "graphql" | "rest" | "grpc" | "static";
+  operation: string;
+  result_path: string;
+  variables_shape: string[];
+  result_shape: string[];
+  row_count?: number;
+  next_page_token_present?: boolean;
+  last_loaded_at?: string;
+}
+```
+
+Implementation plan for the React renderer:
+
+1. Add a `createDebugRuntime()` helper that receives getter functions for the
+   current document, route, selected resource, filters, action modal, and data
+   binding summaries.
+2. Register the runtime from a React effect after the renderer has mounted:
+   `window.__OPEN_UI_IR_DEBUG__ = runtime`.
+3. Keep mutable renderer state in refs so console calls always see the newest
+   state without forcing React re-renders.
+4. Route-driving methods call the same renderer commands as UI interactions:
+   `openRoute()` updates the hash route, `openAction()` invokes the pushed
+   action definition, and `openPanel()` updates generic panel state when the
+   active layout supports panels.
+5. Data loaders record only summaries: operation, result path, field names,
+   count, pagination presence, load time, and error message.
+
+This gives a clean debugging boundary: if a rendered button or panel is wrong,
+first inspect the pushed Spike and binding summaries. If the Spike is correct,
+the bug is in the renderer lowering layer. If the Spike is wrong, the bug is in
+the backend pushdown contract.
 
 ### 5. Target Lowering
 

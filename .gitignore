@@ -1,5 +1,7 @@
 node_modules/
 dist/
+demo-ui-dist/
+demo-backend/target/
 coverage/
 *.tsbuildinfo
 packages/*/src/**/*.js

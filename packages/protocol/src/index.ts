@@ -8,7 +8,21 @@ export type ComponentKind =
   | "metric_row"
   | "chart"
   | "chart_grid";
-export type ChartKind = "line" | "bar" | "area" | "pie" | "heatmap" | "scatter";
+export type ChartKind =
+  | "line"
+  | "bar"
+  | "area"
+  | "pie"
+  | "heatmap"
+  | "scatter"
+  | "radar"
+  | "rose"
+  | "radial_bar"
+  | "funnel"
+  | "treemap"
+  | "word_cloud"
+  | "gauge"
+  | "liquid";
 export type FilterKind = "text" | "select" | "multi_select" | "date_range" | "boolean";
 export type ActionMethod = "get" | "create" | "update" | "delete" | "custom";
 export type SortDirection = "asc" | "desc";
@@ -17,9 +31,17 @@ export interface OpenUiDocument {
   protocol_version: typeof PROTOCOL_VERSION;
   app_name: string;
   display_name: string;
+  default_locale?: string;
+  locales?: LocaleSpec[];
+  messages?: Record<string, Record<string, string>>;
   capabilities: CapabilitySet;
   collections: ResourceCollectionSpec[];
   routes: UiRouteSpec[];
+}
+
+export interface LocaleSpec {
+  locale: string;
+  label: string;
 }
 
 export interface CapabilitySet {
