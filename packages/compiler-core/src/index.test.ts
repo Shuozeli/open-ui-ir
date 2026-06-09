@@ -98,6 +98,87 @@ describe("validateDocument", () => {
     );
   });
 
+  it("validates detail contracts", () => {
+    const doc = structuredClone(exampleDocument);
+    doc.collections[0]!.actions = [
+      {
+        name: "open",
+        label: "Open",
+        method: "get",
+        binding: { transport: "graphql", operation: "product", result_path: "product", variables: {} },
+      },
+    ];
+    doc.routes[0]!.components.push({ id: "empty-detail", kind: "detail_header", props: {} });
+    doc.routes[0]!.components.push({
+      id: "detail",
+      kind: "detail_header",
+      data_ref: "rows",
+      props: {
+        detail: {
+          collection: "products",
+          title_field: "missing_title",
+          subtitle_field: "missing_subtitle",
+          status_field: "missing_status",
+          actions: ["missing_action"],
+          sections: [
+            { id: "overview", label: "Overview", fields: ["title", "missing_field"] },
+            { id: "overview", label: "Duplicate", fields: ["category"] },
+          ],
+          tabs: [
+            { id: "main", label: "Main", sections: ["missing_section"], related: ["missing_related"] },
+            { id: "main", label: "Duplicate" },
+          ],
+          related: [
+            {
+              id: "siblings",
+              label: "Siblings",
+              collection: "missing_collection",
+              data_ref: "missingRows",
+              table: { collection: "products", columns: [{ id: "title", field: "title" }] },
+            },
+            {
+              id: "siblings",
+              label: "Duplicate",
+              collection: "products",
+              data_ref: "rows",
+              table: { collection: "otherProducts", columns: [{ id: "missing", field: "missing_field" }] },
+            },
+          ],
+          timeline: {
+            data_ref: "missingTimeline",
+            title_field: "missing_title",
+            time_field: "missing_time",
+            description_field: "missing_description",
+          },
+        },
+      },
+    });
+
+    expect(validateDocument(doc).map((d) => d.code)).toEqual(
+      expect.arrayContaining([
+        "missing_detail_props",
+        "unknown_detail_title_field",
+        "unknown_detail_subtitle_field",
+        "unknown_detail_status_field",
+        "unknown_detail_action",
+        "duplicate_detail_section",
+        "unknown_detail_section_field",
+        "duplicate_detail_tab",
+        "unknown_detail_tab_section",
+        "unknown_detail_tab_related",
+        "duplicate_related_resource",
+        "unknown_related_collection",
+        "unknown_related_data_ref",
+        "mismatched_related_table_collection",
+        "unknown_table_column_field",
+        "unknown_timeline_data_ref",
+        "unknown_timeline_title_field",
+        "unknown_timeline_time_field",
+        "unknown_timeline_description_field",
+      ]),
+    );
+  });
+
   it("validates collection field references", () => {
     const doc = structuredClone(exampleDocument);
     doc.collections[0]!.fields[1]!.renderer = "missing_renderer";

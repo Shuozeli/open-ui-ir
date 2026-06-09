@@ -309,10 +309,78 @@
               "name": "$route.name"
             }
           }
+        },
+        {
+          "name": "relatedIncidents",
+          "query": {
+            "transport": "graphql",
+            "operation": "relatedIncidentEvents",
+            "result_path": "relatedIncidentEvents.incidentEvents",
+            "variables": {
+              "name": "$route.name"
+            }
+          }
+        },
+        {
+          "name": "timeline",
+          "query": {
+            "transport": "graphql",
+            "operation": "incidentTimeline",
+            "result_path": "incidentTimeline.events",
+            "variables": {
+              "name": "$route.name"
+            }
+          }
         }
       ],
       "components": [
-        { "id": "header", "kind": "detail_header", "data_ref": "incident", "props": { "title_path": "title", "subtitle_path": "service" } },
+        {
+          "id": "header",
+          "kind": "detail_header",
+          "data_ref": "incident",
+          "props": {
+            "detail": {
+              "collection": "incidentEvents",
+              "title_field": "title",
+              "subtitle_field": "service",
+              "status_field": "severity",
+              "actions": ["open", "update", "acknowledge", "delete"],
+              "sections": [
+                { "id": "overview", "label": "Overview", "fields": ["title", "service", "severity", "acknowledged"] },
+                { "id": "metadata", "label": "Metadata", "fields": ["created_at", "duration_ms", "external_url"] }
+              ],
+              "tabs": [
+                { "id": "summary", "label": "Summary", "sections": ["overview", "metadata"] },
+                { "id": "related", "label": "Related", "related": ["relatedIncidents"] },
+                { "id": "activity", "label": "Activity" }
+              ],
+              "related": [
+                {
+                  "id": "relatedIncidents",
+                  "label": "Related Incidents",
+                  "collection": "incidentEvents",
+                  "data_ref": "relatedIncidents",
+                  "table": {
+                    "collection": "incidentEvents",
+                    "columns": [
+                      { "id": "title", "field": "title", "label": "Title", "sortable": false, "visible": true },
+                      { "id": "severity", "field": "severity", "label": "Severity", "sortable": false, "visible": true },
+                      { "id": "created", "field": "created_at", "label": "Created", "sortable": true, "visible": true }
+                    ],
+                    "row_navigation": "/incidents/{name}",
+                    "row_actions": ["open"]
+                  }
+                }
+              ],
+              "timeline": {
+                "data_ref": "timeline",
+                "title_field": "title",
+                "time_field": "created_at",
+                "description_field": "service"
+              }
+            }
+          }
+        },
         {
           "id": "payload",
           "kind": "table",

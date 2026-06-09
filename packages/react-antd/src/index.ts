@@ -1,5 +1,5 @@
 import type { CompileContext, CompileOutput, CompilerTarget, TargetManifest } from "@open-ui-ir/compiler-core";
-import type { ChartKind, ComponentSpec, TableSpec } from "@open-ui-ir/protocol";
+import type { ChartKind, ComponentSpec, DetailSpec, TableSpec } from "@open-ui-ir/protocol";
 
 export const reactAntdManifest: TargetManifest = {
   name: "react-antd",
@@ -64,8 +64,23 @@ function compileComponent(component: ComponentSpec): string {
   if (component.kind === "table") {
     return compileTable(component);
   }
+  if (component.kind === "detail_header") {
+    return compileDetailHeader(component);
+  }
   return `<Card size="small">
         <Table rowKey="name" dataSource={rows} loading={loading} pagination={false} />
+      </Card>`;
+}
+
+function compileDetailHeader(component: ComponentSpec): string {
+  const detail = readDetail(component);
+  const sectionTitles = detail.sections?.map((section) => section.label).join(", ") ?? "";
+  const actionLabels = detail.actions?.join(", ") ?? "";
+  return `<Card size="small" title="${escapeAttribute(detail.title_field)}">
+        <Typography.Text type="secondary">${escapeText(detail.subtitle_field ?? detail.collection)}</Typography.Text>
+        ${detail.status_field !== undefined ? `<Typography.Paragraph>Status: ${escapeText(detail.status_field)}</Typography.Paragraph>` : ""}
+        ${sectionTitles ? `<Typography.Paragraph>Sections: ${escapeText(sectionTitles)}</Typography.Paragraph>` : ""}
+        ${actionLabels ? `<Typography.Paragraph>Actions: ${escapeText(actionLabels)}</Typography.Paragraph>` : ""}
       </Card>`;
 }
 
@@ -126,6 +141,14 @@ function readTable(component: ComponentSpec): TableSpec {
     throw new Error(`table component ${component.id} is missing props.table`);
   }
   return table as TableSpec;
+}
+
+function readDetail(component: ComponentSpec): DetailSpec {
+  const detail = (component.props as { detail?: unknown }).detail;
+  if (!detail || typeof detail !== "object") {
+    throw new Error(`detail component ${component.id} is missing props.detail`);
+  }
+  return detail as DetailSpec;
 }
 
 function antTableAlign(align: "start" | "center" | "end"): "left" | "center" | "right" {

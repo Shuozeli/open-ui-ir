@@ -61,6 +61,16 @@ Table columns bind to collection fields and declare labels, visibility,
 sortable intent, width, and alignment. Sortable columns are currently limited to
 fields that participate in the collection's keyset pagination ordering.
 
+Detail header components declare `props.detail` with:
+
+- a collection reference
+- title, subtitle, and status fields
+- detail actions
+- field sections
+- tabs that reference sections or related-resource panels
+- related-resource panels with table contracts
+- timeline intent with title, time, and optional description fields
+
 ### Interaction Model
 
 The current stable action methods are:
@@ -118,6 +128,8 @@ that lowering.
 - component `props.collection` references to collections
 - table props, collection references, columns, sortable fields, row actions, and
   bulk actions
+- detail props, header fields, actions, sections, tabs, related-resource panels,
+  timeline fields, and nested data refs
 - chart props, chart kind, and non-empty chart encoding
 - target manifests against document requirements, including layouts,
   components, field renderers, filters, actions, chart kinds, and transports
@@ -157,5 +169,6 @@ in `@open-ui-ir/demo-suite`.
 
 The next contract additions should happen in this order:
 
-1. Detail sections, tabs, related-resource panels, and timeline components.
+1. Interaction lifecycle contract for confirmations, submit outcomes, selection
+   policy, and optimistic updates.
 2. GraphQL/OpenAPI introspection input that can generate initial IR documents.

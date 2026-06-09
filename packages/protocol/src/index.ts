@@ -152,7 +152,12 @@ export interface ComponentSpec {
   props: ComponentProps;
 }
 
-export type ComponentProps = Record<string, unknown> | ChartComponentProps | MetricRowProps | TableComponentProps;
+export type ComponentProps =
+  | Record<string, unknown>
+  | ChartComponentProps
+  | MetricRowProps
+  | TableComponentProps
+  | DetailHeaderComponentProps;
 
 export interface TableComponentProps {
   table: TableSpec;
@@ -174,6 +179,50 @@ export interface TableColumnSpec {
   visible?: boolean;
   width?: number;
   align?: "start" | "center" | "end";
+}
+
+export interface DetailHeaderComponentProps {
+  detail: DetailSpec;
+}
+
+export interface DetailSpec {
+  collection: string;
+  title_field: string;
+  subtitle_field?: string;
+  status_field?: string;
+  actions?: string[];
+  sections?: DetailSectionSpec[];
+  tabs?: DetailTabSpec[];
+  related?: RelatedResourceSpec[];
+  timeline?: TimelineSpec;
+}
+
+export interface DetailSectionSpec {
+  id: string;
+  label: string;
+  fields: string[];
+}
+
+export interface DetailTabSpec {
+  id: string;
+  label: string;
+  sections?: string[];
+  related?: string[];
+}
+
+export interface RelatedResourceSpec {
+  id: string;
+  label: string;
+  collection: string;
+  data_ref: string;
+  table: TableSpec;
+}
+
+export interface TimelineSpec {
+  data_ref: string;
+  title_field: string;
+  time_field: string;
+  description_field?: string;
 }
 
 export interface MetricRowProps {

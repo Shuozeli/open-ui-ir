@@ -80,6 +80,23 @@ describe("examples", () => {
     expect(tableSpecs[0]?.row_actions).toEqual(["open", "update", "acknowledge", "delete"]);
     expect(tableSpecs[0]?.bulk_actions).toEqual(["acknowledge", "delete"]);
 
+    const detailSpec = routes
+      .flatMap((route) => route.components)
+      .find((component) => component.kind === "detail_header")?.props as
+      | {
+          detail: {
+            sections?: unknown[];
+            tabs?: unknown[];
+            related?: unknown[];
+            timeline?: unknown;
+          };
+        }
+      | undefined;
+    expect(detailSpec?.detail.sections?.length).toBeGreaterThan(0);
+    expect(detailSpec?.detail.tabs?.length).toBeGreaterThan(0);
+    expect(detailSpec?.detail.related?.length).toBeGreaterThan(0);
+    expect(detailSpec?.detail.timeline).toBeDefined();
+
     const routeTransports = routes.flatMap((route) => route.data_bindings.map((binding) => binding.query.transport));
     const actionTransports = collections.flatMap((collection) => collection.actions.map((action) => action.binding.transport));
     expect(new Set([...routeTransports, ...actionTransports])).toEqual(new Set(["graphql"]));

@@ -231,10 +231,74 @@
             "result_path": "workItem",
             "variables": { "name": "$route.name" }
           }
+        },
+        {
+          "name": "relatedItems",
+          "query": {
+            "transport": "graphql",
+            "operation": "relatedWorkItems",
+            "result_path": "relatedWorkItems.workItems",
+            "variables": { "name": "$route.name" }
+          }
+        },
+        {
+          "name": "timeline",
+          "query": {
+            "transport": "graphql",
+            "operation": "workItemTimeline",
+            "result_path": "workItemTimeline.events",
+            "variables": { "name": "$route.name" }
+          }
         }
       ],
       "components": [
-        { "id": "header", "kind": "detail_header", "data_ref": "item", "props": { "title_path": "title", "subtitle_path": "state" } },
+        {
+          "id": "header",
+          "kind": "detail_header",
+          "data_ref": "item",
+          "props": {
+            "detail": {
+              "collection": "workItems",
+              "title_field": "title",
+              "subtitle_field": "owner",
+              "status_field": "state",
+              "actions": ["open", "update", "close", "delete"],
+              "sections": [
+                { "id": "overview", "label": "Overview", "fields": ["title", "state", "priority", "owner", "blocked"] },
+                { "id": "planning", "label": "Planning", "fields": ["estimate_points", "updated_at"] }
+              ],
+              "tabs": [
+                { "id": "summary", "label": "Summary", "sections": ["overview", "planning"] },
+                { "id": "related", "label": "Related", "related": ["relatedItems"] },
+                { "id": "activity", "label": "Activity" }
+              ],
+              "related": [
+                {
+                  "id": "relatedItems",
+                  "label": "Related Items",
+                  "collection": "workItems",
+                  "data_ref": "relatedItems",
+                  "table": {
+                    "collection": "workItems",
+                    "columns": [
+                      { "id": "title", "field": "title", "label": "Title", "sortable": false, "visible": true },
+                      { "id": "state", "field": "state", "label": "State", "sortable": false, "visible": true },
+                      { "id": "updated", "field": "updated_at", "label": "Updated", "sortable": true, "visible": true }
+                    ],
+                    "row_navigation": "/work-items/{name}",
+                    "row_actions": ["open"]
+                  }
+                }
+              ],
+              "timeline": {
+                "data_ref": "timeline",
+                "title_field": "title",
+                "time_field": "updated_at",
+                "description_field": "state"
+              }
+            }
+          }
+        },
         {
           "id": "payload",
           "kind": "table",

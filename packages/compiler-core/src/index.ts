@@ -9,6 +9,7 @@ import type {
   QueryBinding,
   ResourceFieldSpec,
   ResourceCollectionSpec,
+  DetailSpec,
   TableSpec,
   UiRouteSpec,
 } from "@open-ui-ir/protocol";
@@ -283,6 +284,9 @@ function requireComponents(
     }
     if (component.kind === "table") {
       requireTableProps(component, routeIndex, componentIndex, diagnostics);
+    }
+    if (component.kind === "detail_header") {
+      requireDetailProps(component, routeIndex, componentIndex, diagnostics);
     }
   }
 }
@@ -583,6 +587,10 @@ function requireComponentReferences(
       );
     }
 
+    if (component.kind === "detail_header") {
+      requireDetailBindingReferences(component, bindingNames, routeIndex, componentIndex, diagnostics);
+    }
+
     const collection = collectionProp(component);
     if (collection !== undefined && !collections.has(collection)) {
       diagnostics.push(
@@ -603,7 +611,257 @@ function requireComponentReferences(
         }
       }
     }
+
+    if (component.kind === "detail_header") {
+      const detail = detailProp(component);
+      if (detail !== undefined) {
+        const detailCollection = collections.get(detail.collection);
+        if (detailCollection !== undefined) {
+          requireDetailContract(detail, collections, detailCollection, routeIndex, componentIndex, diagnostics);
+        }
+      }
+    }
   });
+}
+
+function requireDetailBindingReferences(
+  component: ComponentSpec,
+  bindingNames: Set<string>,
+  routeIndex: number,
+  componentIndex: number,
+  diagnostics: Diagnostic[],
+): void {
+  const detail = detailProp(component);
+  if (detail === undefined) return;
+
+  detail.related?.forEach((related, relatedIndex) => {
+    if (!bindingNames.has(rootPath(related.data_ref))) {
+      diagnostics.push(
+        error(
+          "unknown_related_data_ref",
+          `related data_ref ${related.data_ref} does not reference a route data binding`,
+          `/routes/${routeIndex}/components/${componentIndex}/props/detail/related/${relatedIndex}/data_ref`,
+        ),
+      );
+    }
+  });
+
+  if (detail.timeline !== undefined && !bindingNames.has(rootPath(detail.timeline.data_ref))) {
+    diagnostics.push(
+      error(
+        "unknown_timeline_data_ref",
+        `timeline data_ref ${detail.timeline.data_ref} does not reference a route data binding`,
+        `/routes/${routeIndex}/components/${componentIndex}/props/detail/timeline/data_ref`,
+      ),
+    );
+  }
+}
+
+function requireDetailProps(
+  component: ComponentSpec,
+  routeIndex: number,
+  componentIndex: number,
+  diagnostics: Diagnostic[],
+): void {
+  const detail = detailProp(component);
+  if (detail === undefined) {
+    diagnostics.push(
+      error(
+        "missing_detail_props",
+        "detail_header component must include props.detail",
+        `/routes/${routeIndex}/components/${componentIndex}/props/detail`,
+      ),
+    );
+    return;
+  }
+  if (typeof detail.collection !== "string") {
+    diagnostics.push(
+      error(
+        "missing_detail_collection",
+        "detail component must declare props.detail.collection",
+        `/routes/${routeIndex}/components/${componentIndex}/props/detail/collection`,
+      ),
+    );
+  }
+}
+
+function requireDetailContract(
+  detail: DetailSpec,
+  collections: Map<string, ResourceCollectionSpec>,
+  collection: ResourceCollectionSpec,
+  routeIndex: number,
+  componentIndex: number,
+  diagnostics: Diagnostic[],
+): void {
+  const fields = fieldSet(collection);
+  const actions = new Map(collection.actions.map((action) => [action.name, action]));
+  requireDetailField(detail.title_field, "unknown_detail_title_field", "title_field", fields, routeIndex, componentIndex, diagnostics);
+  if (detail.subtitle_field !== undefined) {
+    requireDetailField(detail.subtitle_field, "unknown_detail_subtitle_field", "subtitle_field", fields, routeIndex, componentIndex, diagnostics);
+  }
+  if (detail.status_field !== undefined) {
+    requireDetailField(detail.status_field, "unknown_detail_status_field", "status_field", fields, routeIndex, componentIndex, diagnostics);
+  }
+
+  detail.actions?.forEach((actionName, actionIndex) => {
+    if (!actions.has(actionName)) {
+      diagnostics.push(
+        error(
+          "unknown_detail_action",
+          `detail action ${actionName} is not declared on collection ${collection.name}`,
+          `/routes/${routeIndex}/components/${componentIndex}/props/detail/actions/${actionIndex}`,
+        ),
+      );
+    }
+  });
+
+  const sectionIds = new Set<string>();
+  detail.sections?.forEach((section, sectionIndex) => {
+    if (sectionIds.has(section.id)) {
+      diagnostics.push(
+        error(
+          "duplicate_detail_section",
+          `duplicate detail section ${section.id}`,
+          `/routes/${routeIndex}/components/${componentIndex}/props/detail/sections/${sectionIndex}/id`,
+        ),
+      );
+    }
+    sectionIds.add(section.id);
+    section.fields.forEach((field, fieldIndex) => {
+      if (!fields.has(field)) {
+        diagnostics.push(
+          error(
+            "unknown_detail_section_field",
+            `detail section field ${field} is not in collection ${collection.name}`,
+            `/routes/${routeIndex}/components/${componentIndex}/props/detail/sections/${sectionIndex}/fields/${fieldIndex}`,
+          ),
+        );
+      }
+    });
+  });
+
+  const relatedIds = new Set<string>();
+  detail.related?.forEach((related, relatedIndex) => {
+    if (relatedIds.has(related.id)) {
+      diagnostics.push(
+        error(
+          "duplicate_related_resource",
+          `duplicate related resource ${related.id}`,
+          `/routes/${routeIndex}/components/${componentIndex}/props/detail/related/${relatedIndex}/id`,
+        ),
+      );
+    }
+    relatedIds.add(related.id);
+    const relatedCollection = collections.get(related.collection);
+    if (relatedCollection === undefined) {
+      diagnostics.push(
+        error(
+          "unknown_related_collection",
+          `related collection ${related.collection} is not declared`,
+          `/routes/${routeIndex}/components/${componentIndex}/props/detail/related/${relatedIndex}/collection`,
+        ),
+      );
+      return;
+    }
+    if (related.table.collection !== related.collection) {
+      diagnostics.push(
+        error(
+          "mismatched_related_table_collection",
+          `related table collection ${related.table.collection} must match ${related.collection}`,
+          `/routes/${routeIndex}/components/${componentIndex}/props/detail/related/${relatedIndex}/table/collection`,
+        ),
+      );
+    }
+    requireTableContract(related.table, relatedCollection, routeIndex, componentIndex, diagnostics);
+  });
+
+  const tabIds = new Set<string>();
+  detail.tabs?.forEach((tab, tabIndex) => {
+    if (tabIds.has(tab.id)) {
+      diagnostics.push(
+        error(
+          "duplicate_detail_tab",
+          `duplicate detail tab ${tab.id}`,
+          `/routes/${routeIndex}/components/${componentIndex}/props/detail/tabs/${tabIndex}/id`,
+        ),
+      );
+    }
+    tabIds.add(tab.id);
+    tab.sections?.forEach((sectionId, sectionIndex) => {
+      if (!sectionIds.has(sectionId)) {
+        diagnostics.push(
+          error(
+            "unknown_detail_tab_section",
+            `tab section ${sectionId} is not declared`,
+            `/routes/${routeIndex}/components/${componentIndex}/props/detail/tabs/${tabIndex}/sections/${sectionIndex}`,
+          ),
+        );
+      }
+    });
+    tab.related?.forEach((relatedId, relatedIndex) => {
+      if (!relatedIds.has(relatedId)) {
+        diagnostics.push(
+          error(
+            "unknown_detail_tab_related",
+            `tab related panel ${relatedId} is not declared`,
+            `/routes/${routeIndex}/components/${componentIndex}/props/detail/tabs/${tabIndex}/related/${relatedIndex}`,
+          ),
+        );
+      }
+    });
+  });
+
+  if (detail.timeline !== undefined) {
+    requireDetailField(
+      detail.timeline.title_field,
+      "unknown_timeline_title_field",
+      "timeline/title_field",
+      fields,
+      routeIndex,
+      componentIndex,
+      diagnostics,
+    );
+    requireDetailField(
+      detail.timeline.time_field,
+      "unknown_timeline_time_field",
+      "timeline/time_field",
+      fields,
+      routeIndex,
+      componentIndex,
+      diagnostics,
+    );
+    if (detail.timeline.description_field !== undefined) {
+      requireDetailField(
+        detail.timeline.description_field,
+        "unknown_timeline_description_field",
+        "timeline/description_field",
+        fields,
+        routeIndex,
+        componentIndex,
+        diagnostics,
+      );
+    }
+  }
+}
+
+function requireDetailField(
+  field: string,
+  code: string,
+  pathSegment: string,
+  fields: Set<string>,
+  routeIndex: number,
+  componentIndex: number,
+  diagnostics: Diagnostic[],
+): void {
+  if (!fields.has(field)) {
+    diagnostics.push(
+      error(
+        code,
+        `detail field ${field} is not in collection`,
+        `/routes/${routeIndex}/components/${componentIndex}/props/detail/${pathSegment}`,
+      ),
+    );
+  }
 }
 
 function requireTableProps(
@@ -764,6 +1022,9 @@ function rootPath(path: string): string {
 }
 
 function collectionProp(component: ComponentSpec): string | undefined {
+  const detail = detailProp(component);
+  if (detail !== undefined) return detail.collection;
+
   const table = tableProp(component);
   if (table !== undefined) return table.collection;
 
@@ -780,6 +1041,12 @@ function tableProp(component: ComponentSpec): TableSpec | undefined {
   const table = (component.props as { table?: unknown }).table;
   if (!table || typeof table !== "object") return undefined;
   return table as TableSpec;
+}
+
+function detailProp(component: ComponentSpec): DetailSpec | undefined {
+  const detail = (component.props as { detail?: unknown }).detail;
+  if (!detail || typeof detail !== "object") return undefined;
+  return detail as DetailSpec;
 }
 
 function error(code: string, message: string, path: string): Diagnostic {
