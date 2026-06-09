@@ -286,6 +286,85 @@ describe("validateDocument", () => {
     );
   });
 
+  it("validates action interaction lifecycle contracts", () => {
+    const doc = structuredClone(exampleDocument);
+    doc.collections[0]!.actions = [
+      {
+        name: "open",
+        label: "Open",
+        method: "get",
+        binding: { transport: "graphql", operation: "product", result_path: "product", variables: {} },
+        interaction: { optimistic_update: { mode: "remove_resource" } },
+      },
+      {
+        name: "create",
+        label: "Create",
+        method: "create",
+        binding: { transport: "graphql", operation: "createProduct", result_path: "createProduct", variables: {} },
+        form: {
+          fields: [
+            { field: "title", control: "text" },
+            { field: "category", control: "text" },
+          ],
+        },
+        interaction: {
+          outcome: { success_message: "" },
+          optimistic_update: { mode: "remove_resource" },
+        },
+      },
+      {
+        name: "update",
+        label: "Update",
+        method: "update",
+        binding: {
+          transport: "graphql",
+          operation: "updateProduct",
+          result_path: "updateProduct",
+          variables: { update_mask: "$form.update_mask" },
+        },
+        form: {
+          fields: [{ field: "title", control: "text" }],
+          update_mask: { variable: "update_mask", value_path: "$form.update_mask" },
+        },
+        interaction: {
+          submit: { presentation: "modal" },
+          outcome: { failure_message: "" },
+          optimistic_update: { mode: "prepend_resource" },
+        },
+      },
+      {
+        name: "delete",
+        label: "Delete",
+        method: "delete",
+        binding: { transport: "graphql", operation: "deleteProduct", result_path: "deleteProduct", variables: {} },
+        interaction: {
+          confirmation: { title: "", message: "", destructive: false },
+          optimistic_update: { mode: "patch_resource" },
+        },
+      },
+      {
+        name: "archive",
+        label: "Archive",
+        method: "custom",
+        binding: { transport: "graphql", operation: "archiveProduct", result_path: "archiveProduct", variables: {} },
+      },
+    ];
+    (doc.routes[0]!.components[1]!.props as { table: { bulk_actions: string[] } }).table.bulk_actions = ["delete"];
+
+    expect(validateDocument(doc).map((d) => d.code)).toEqual(
+      expect.arrayContaining([
+        "invalid_optimistic_update",
+        "missing_submit_lifecycle",
+        "missing_action_outcome",
+        "invalid_success_message",
+        "invalid_failure_message",
+        "missing_destructive_confirmation",
+        "invalid_confirmation_copy",
+        "invalid_bulk_selection",
+      ]),
+    );
+  });
+
   it("validates target manifests against document requirements", () => {
     const target = {
       ...compatibleManifest,

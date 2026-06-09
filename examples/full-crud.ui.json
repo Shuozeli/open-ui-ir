@@ -112,6 +112,11 @@
               { "field": "blocked", "label": "Blocked", "control": "checkbox" },
               { "field": "estimate_points", "label": "Estimate", "control": "number" }
             ]
+          },
+          "interaction": {
+            "submit": { "presentation": "modal", "pending_message": "Creating work item", "disable_while_pending": true },
+            "outcome": { "success_message": "Created work item", "failure_message": "Could not create work item" },
+            "optimistic_update": { "mode": "prepend_resource" }
           }
         },
         {
@@ -134,6 +139,11 @@
               { "field": "estimate_points", "label": "Estimate", "control": "number" }
             ],
             "update_mask": { "variable": "update_mask", "value_path": "$form.update_mask" }
+          },
+          "interaction": {
+            "submit": { "presentation": "modal", "pending_message": "Updating work item", "disable_while_pending": true },
+            "outcome": { "success_message": "Updated work item", "failure_message": "Could not update work item" },
+            "optimistic_update": { "mode": "patch_resource" }
           }
         },
         {
@@ -145,6 +155,10 @@
             "operation": "closeWorkItem",
             "result_path": "closeWorkItem",
             "variables": { "name": "$resource.name" }
+          },
+          "interaction": {
+            "outcome": { "success_message": "Closed work item", "failure_message": "Could not close work item" },
+            "optimistic_update": { "mode": "patch_resource" }
           }
         },
         {
@@ -156,6 +170,17 @@
             "operation": "deleteWorkItem",
             "result_path": "deleteWorkItem",
             "variables": { "name": "$resource.name" }
+          },
+          "interaction": {
+            "confirmation": {
+              "title": "Delete work item?",
+              "message": "This removes the selected work item.",
+              "confirm_label": "Delete",
+              "cancel_label": "Cancel",
+              "destructive": true
+            },
+            "outcome": { "success_message": "Deleted work item", "failure_message": "Could not delete work item" },
+            "optimistic_update": { "mode": "remove_resource" }
           }
         }
       ],
@@ -209,6 +234,7 @@
                 { "id": "owner", "field": "owner", "label": "Owner", "sortable": false, "visible": true },
                 { "id": "updated", "field": "updated_at", "label": "Updated", "sortable": true, "visible": true }
               ],
+              "selection": { "mode": "multiple", "required_for_bulk_actions": true },
               "row_navigation": "/work-items/{name}",
               "row_actions": ["open", "update", "close", "delete"],
               "bulk_actions": ["close", "delete"]

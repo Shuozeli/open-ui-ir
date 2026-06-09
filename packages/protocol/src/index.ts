@@ -27,6 +27,9 @@ export type FilterKind = "text" | "select" | "multi_select" | "date_range" | "bo
 export type ActionMethod = "get" | "create" | "update" | "delete" | "custom";
 export type SortDirection = "asc" | "desc";
 export type FormControlKind = "text" | "textarea" | "number" | "checkbox" | "select" | "multi_select" | "date_time" | "json";
+export type SelectionMode = "none" | "single" | "multiple";
+export type SubmitPresentation = "inline" | "modal" | "confirm";
+export type OptimisticUpdateMode = "none" | "prepend_resource" | "replace_resource" | "patch_resource" | "remove_resource";
 
 export interface OpenUiDocument {
   protocol_version: typeof PROTOCOL_VERSION;
@@ -166,9 +169,15 @@ export interface TableComponentProps {
 export interface TableSpec {
   collection: string;
   columns: TableColumnSpec[];
+  selection?: TableSelectionSpec;
   row_navigation?: string;
   row_actions?: string[];
   bulk_actions?: string[];
+}
+
+export interface TableSelectionSpec {
+  mode: SelectionMode;
+  required_for_bulk_actions?: boolean;
 }
 
 export interface TableColumnSpec {
@@ -264,6 +273,38 @@ export interface ActionSpec {
   method: ActionMethod;
   binding: QueryBinding;
   form?: ActionFormSpec;
+  interaction?: ActionInteractionSpec;
+}
+
+export interface ActionInteractionSpec {
+  confirmation?: ConfirmationSpec;
+  submit?: SubmitSpec;
+  outcome?: ActionOutcomeSpec;
+  optimistic_update?: OptimisticUpdateSpec;
+}
+
+export interface ConfirmationSpec {
+  title: string;
+  message: string;
+  confirm_label?: string;
+  cancel_label?: string;
+  destructive?: boolean;
+}
+
+export interface SubmitSpec {
+  presentation: SubmitPresentation;
+  pending_message?: string;
+  disable_while_pending?: boolean;
+}
+
+export interface ActionOutcomeSpec {
+  success_message?: string;
+  failure_message?: string;
+  refresh_bindings?: string[];
+}
+
+export interface OptimisticUpdateSpec {
+  mode: OptimisticUpdateMode;
 }
 
 export interface ActionFormSpec {

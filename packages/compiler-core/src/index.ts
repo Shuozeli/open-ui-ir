@@ -6,6 +6,7 @@ import type {
   FormControlKind,
   LayoutKind,
   OpenUiDocument,
+  OptimisticUpdateMode,
   QueryBinding,
   ResourceFieldSpec,
   ResourceCollectionSpec,
@@ -41,6 +42,14 @@ const controlsByValueType: Record<ResourceFieldSpec["value_type"], Set<FormContr
   datetime: new Set(["date_time"]),
   json: new Set(["json", "textarea"]),
 };
+
+const optimisticModes = new Set<OptimisticUpdateMode>([
+  "none",
+  "prepend_resource",
+  "replace_resource",
+  "patch_resource",
+  "remove_resource",
+]);
 
 export interface Diagnostic {
   severity: DiagnosticSeverity;
@@ -123,6 +132,7 @@ export function validateDocument(document: OpenUiDocument): Diagnostic[] {
     requireFilterFields(collection, index, diagnostics);
     requireActionCapabilities(document, collection, index, diagnostics);
     requireActionForms(collection, index, diagnostics);
+    requireActionInteractions(collection, index, diagnostics);
     requirePaginationFields(collection, index, diagnostics);
     requireKeysetTieBreaker(collection, index, diagnostics);
   });
@@ -503,6 +513,140 @@ function requireUpdateMask(
       ),
     );
   }
+}
+
+function requireActionInteractions(
+  collection: ResourceCollectionSpec,
+  collectionIndex: number,
+  diagnostics: Diagnostic[],
+): void {
+  collection.actions.forEach((action, actionIndex) => {
+    const interaction = action.interaction;
+    const isMutating = action.method === "create" || action.method === "update" || action.method === "delete" || action.method === "custom";
+
+    if ((action.method === "create" || action.method === "update") && interaction?.submit === undefined) {
+      diagnostics.push(
+        error(
+          "missing_submit_lifecycle",
+          `${action.method} action ${action.name} must declare submit lifecycle`,
+          `/collections/${collectionIndex}/actions/${actionIndex}/interaction/submit`,
+        ),
+      );
+    }
+
+    if (isMutating && interaction?.outcome === undefined) {
+      diagnostics.push(
+        error(
+          "missing_action_outcome",
+          `${action.method} action ${action.name} must declare success/failure outcome copy`,
+          `/collections/${collectionIndex}/actions/${actionIndex}/interaction/outcome`,
+        ),
+      );
+    }
+
+    if (action.method === "delete" && interaction?.confirmation?.destructive !== true) {
+      diagnostics.push(
+        error(
+          "missing_destructive_confirmation",
+          `delete action ${action.name} must declare destructive confirmation`,
+          `/collections/${collectionIndex}/actions/${actionIndex}/interaction/confirmation`,
+        ),
+      );
+    }
+
+    if (interaction?.confirmation !== undefined) {
+      if (interaction.confirmation.title.trim() === "" || interaction.confirmation.message.trim() === "") {
+        diagnostics.push(
+          error(
+            "invalid_confirmation_copy",
+            "confirmation title and message must be non-empty",
+            `/collections/${collectionIndex}/actions/${actionIndex}/interaction/confirmation`,
+          ),
+        );
+      }
+    }
+
+    if (interaction?.outcome !== undefined) {
+      if (
+        interaction.outcome.success_message !== undefined &&
+        interaction.outcome.success_message.trim() === ""
+      ) {
+        diagnostics.push(
+          error(
+            "invalid_success_message",
+            "success_message must be non-empty when present",
+            `/collections/${collectionIndex}/actions/${actionIndex}/interaction/outcome/success_message`,
+          ),
+        );
+      }
+      if (
+        interaction.outcome.failure_message !== undefined &&
+        interaction.outcome.failure_message.trim() === ""
+      ) {
+        diagnostics.push(
+          error(
+            "invalid_failure_message",
+            "failure_message must be non-empty when present",
+            `/collections/${collectionIndex}/actions/${actionIndex}/interaction/outcome/failure_message`,
+          ),
+        );
+      }
+    }
+
+    if (interaction?.optimistic_update !== undefined) {
+      const mode = interaction.optimistic_update.mode;
+      if (!optimisticModes.has(mode as OptimisticUpdateMode)) {
+        diagnostics.push(
+          error(
+            "unsupported_optimistic_update",
+            `optimistic update mode ${mode} is not supported`,
+            `/collections/${collectionIndex}/actions/${actionIndex}/interaction/optimistic_update/mode`,
+          ),
+        );
+      }
+      if (action.method === "get" && mode !== "none") {
+        diagnostics.push(
+          error(
+            "invalid_optimistic_update",
+            "get actions cannot declare optimistic resource updates",
+            `/collections/${collectionIndex}/actions/${actionIndex}/interaction/optimistic_update/mode`,
+          ),
+        );
+      }
+      if (action.method === "delete" && mode !== "none" && mode !== "remove_resource") {
+        diagnostics.push(
+          error(
+            "invalid_optimistic_update",
+            "delete actions can only use none or remove_resource optimistic updates",
+            `/collections/${collectionIndex}/actions/${actionIndex}/interaction/optimistic_update/mode`,
+          ),
+        );
+      }
+      if (action.method === "create" && mode !== "none" && mode !== "prepend_resource") {
+        diagnostics.push(
+          error(
+            "invalid_optimistic_update",
+            "create actions can only use none or prepend_resource optimistic updates",
+            `/collections/${collectionIndex}/actions/${actionIndex}/interaction/optimistic_update/mode`,
+          ),
+        );
+      }
+      if (
+        action.method === "update" &&
+        mode !== "none" &&
+        mode !== "replace_resource" &&
+        mode !== "patch_resource"
+      ) {
+        diagnostics.push(
+          error(
+            "invalid_optimistic_update",
+            "update actions can only use none, replace_resource, or patch_resource optimistic updates",
+            `/collections/${collectionIndex}/actions/${actionIndex}/interaction/optimistic_update/mode`,
+          ),
+        );
+      }
+    }
+  });
 }
 
 function requirePaginationFields(
@@ -910,6 +1054,18 @@ function requireTableContract(
   const columnIds = new Set<string>();
 
   if (!Array.isArray(table.columns)) return;
+
+  if (table.bulk_actions !== undefined && table.bulk_actions.length > 0) {
+    if (table.selection?.mode !== "multiple" || table.selection.required_for_bulk_actions !== true) {
+      diagnostics.push(
+        error(
+          "invalid_bulk_selection",
+          "tables with bulk actions must declare multiple selection required for bulk actions",
+          `/routes/${routeIndex}/components/${componentIndex}/props/table/selection`,
+        ),
+      );
+    }
+  }
 
   table.columns.forEach((column, columnIndex) => {
     if (columnIds.has(column.id)) {

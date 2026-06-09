@@ -84,6 +84,16 @@ The current stable action methods are:
 Actions are declarative bindings. Renderers decide whether an action becomes a
 button, modal, confirmation dialog, keyboard command, or terminal action.
 
+Action interactions declare target-neutral lifecycle behavior:
+
+- confirmation copy, including destructive confirmations
+- submit presentation, pending copy, and pending disable policy
+- success/failure outcome copy
+- optimistic update intent
+
+Tables with bulk actions declare a selection policy. Bulk actions currently
+require multiple selection with `required_for_bulk_actions: true`.
+
 Create and update actions declare form schemas through `action.form`. Form
 schemas bind editable fields back to collection fields, choose target-neutral
 controls, and let update actions declare how `$form.update_mask` is sent to the
@@ -130,6 +140,8 @@ that lowering.
   bulk actions
 - detail props, header fields, actions, sections, tabs, related-resource panels,
   timeline fields, and nested data refs
+- interaction lifecycle for submit behavior, outcomes, destructive
+  confirmations, optimistic updates, and bulk-action selection policy
 - chart props, chart kind, and non-empty chart encoding
 - target manifests against document requirements, including layouts,
   components, field renderers, filters, actions, chart kinds, and transports
@@ -169,6 +181,5 @@ in `@open-ui-ir/demo-suite`.
 
 The next contract additions should happen in this order:
 
-1. Interaction lifecycle contract for confirmations, submit outcomes, selection
-   policy, and optimistic updates.
-2. GraphQL/OpenAPI introspection input that can generate initial IR documents.
+1. GraphQL/OpenAPI introspection input that can generate initial IR documents.
+2. CLI tooling for validation and target compilation.

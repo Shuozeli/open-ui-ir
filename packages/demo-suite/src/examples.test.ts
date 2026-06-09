@@ -66,6 +66,17 @@ describe("examples", () => {
         .flatMap((collection) => collection.actions)
         .find((action) => action.method === "update")?.form?.update_mask,
     ).toEqual({ variable: "update_mask", value_path: "$form.update_mask" });
+    expect(
+      collections
+        .flatMap((collection) => collection.actions)
+        .filter((action) => action.method !== "get")
+        .every((action) => action.interaction?.outcome !== undefined),
+    ).toBe(true);
+    expect(
+      collections
+        .flatMap((collection) => collection.actions)
+        .find((action) => action.method === "delete")?.interaction?.confirmation?.destructive,
+    ).toBe(true);
 
     const routes = document.routes;
     expect(new Set(routes.map((route) => route.layout))).toEqual(new Set(["crud_list", "detail_page", "dashboard"]));
@@ -75,10 +86,23 @@ describe("examples", () => {
     const tableSpecs = routes
       .flatMap((route) => route.components)
       .filter((component) => component.kind === "table")
-      .map((component) => (component.props as { table: { columns: unknown[]; row_actions?: string[]; bulk_actions?: string[] } }).table);
+      .map(
+        (component) =>
+          (
+            component.props as {
+              table: {
+                columns: unknown[];
+                row_actions?: string[];
+                bulk_actions?: string[];
+                selection?: { mode: string; required_for_bulk_actions?: boolean };
+              };
+            }
+          ).table,
+      );
     expect(tableSpecs[0]?.columns.length).toBeGreaterThan(0);
     expect(tableSpecs[0]?.row_actions).toEqual(["open", "update", "acknowledge", "delete"]);
     expect(tableSpecs[0]?.bulk_actions).toEqual(["acknowledge", "delete"]);
+    expect(tableSpecs[0]?.selection).toEqual({ mode: "multiple", required_for_bulk_actions: true });
 
     const detailSpec = routes
       .flatMap((route) => route.components)

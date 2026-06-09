@@ -181,6 +181,11 @@
               { "field": "acknowledged", "label": "Acknowledged", "control": "checkbox" },
               { "field": "external_url", "label": "External URL", "control": "text" }
             ]
+          },
+          "interaction": {
+            "submit": { "presentation": "modal", "pending_message": "Creating incident", "disable_while_pending": true },
+            "outcome": { "success_message": "Created incident", "failure_message": "Could not create incident" },
+            "optimistic_update": { "mode": "prepend_resource" }
           }
         },
         {
@@ -206,6 +211,11 @@
               { "field": "external_url", "label": "External URL", "control": "text" }
             ],
             "update_mask": { "variable": "update_mask", "value_path": "$form.update_mask" }
+          },
+          "interaction": {
+            "submit": { "presentation": "modal", "pending_message": "Updating incident", "disable_while_pending": true },
+            "outcome": { "success_message": "Updated incident", "failure_message": "Could not update incident" },
+            "optimistic_update": { "mode": "patch_resource" }
           }
         },
         {
@@ -219,6 +229,10 @@
             "variables": {
               "name": "$resource.name"
             }
+          },
+          "interaction": {
+            "outcome": { "success_message": "Acknowledged incident", "failure_message": "Could not acknowledge incident" },
+            "optimistic_update": { "mode": "patch_resource" }
           }
         },
         {
@@ -232,6 +246,17 @@
             "variables": {
               "name": "$resource.name"
             }
+          },
+          "interaction": {
+            "confirmation": {
+              "title": "Delete incident?",
+              "message": "This removes the selected incident.",
+              "confirm_label": "Delete",
+              "cancel_label": "Cancel",
+              "destructive": true
+            },
+            "outcome": { "success_message": "Deleted incident", "failure_message": "Could not delete incident" },
+            "optimistic_update": { "mode": "remove_resource" }
           }
         }
       ],
@@ -285,6 +310,7 @@
                 { "id": "created", "field": "created_at", "label": "Created", "sortable": true, "visible": true },
                 { "id": "acknowledged", "field": "acknowledged", "label": "Acknowledged", "sortable": false, "visible": true }
               ],
+              "selection": { "mode": "multiple", "required_for_bulk_actions": true },
               "row_navigation": "/incidents/{name}",
               "row_actions": ["open", "update", "acknowledge", "delete"],
               "bulk_actions": ["acknowledge", "delete"]
