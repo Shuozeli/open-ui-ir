@@ -152,7 +152,29 @@ export interface ComponentSpec {
   props: ComponentProps;
 }
 
-export type ComponentProps = Record<string, unknown> | ChartComponentProps | MetricRowProps;
+export type ComponentProps = Record<string, unknown> | ChartComponentProps | MetricRowProps | TableComponentProps;
+
+export interface TableComponentProps {
+  table: TableSpec;
+}
+
+export interface TableSpec {
+  collection: string;
+  columns: TableColumnSpec[];
+  row_navigation?: string;
+  row_actions?: string[];
+  bulk_actions?: string[];
+}
+
+export interface TableColumnSpec {
+  id: string;
+  field: string;
+  label?: string;
+  sortable?: boolean;
+  visible?: boolean;
+  width?: number;
+  align?: "start" | "center" | "end";
+}
 
 export interface MetricRowProps {
   metrics: MetricSpec[];

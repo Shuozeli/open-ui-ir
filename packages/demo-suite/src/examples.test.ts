@@ -72,6 +72,14 @@ describe("examples", () => {
     expect(new Set(routes.flatMap((route) => route.components.map((component) => component.kind)))).toEqual(
       new Set(["filter_bar", "table", "detail_header", "metric_row", "chart", "chart_grid"]),
     );
+    const tableSpecs = routes
+      .flatMap((route) => route.components)
+      .filter((component) => component.kind === "table")
+      .map((component) => (component.props as { table: { columns: unknown[]; row_actions?: string[]; bulk_actions?: string[] } }).table);
+    expect(tableSpecs[0]?.columns.length).toBeGreaterThan(0);
+    expect(tableSpecs[0]?.row_actions).toEqual(["open", "update", "acknowledge", "delete"]);
+    expect(tableSpecs[0]?.bulk_actions).toEqual(["acknowledge", "delete"]);
+
     const routeTransports = routes.flatMap((route) => route.data_bindings.map((binding) => binding.query.transport));
     const actionTransports = collections.flatMap((collection) => collection.actions.map((action) => action.binding.transport));
     expect(new Set([...routeTransports, ...actionTransports])).toEqual(new Set(["graphql"]));

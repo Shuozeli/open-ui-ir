@@ -271,7 +271,26 @@
       ],
       "components": [
         { "id": "filters", "kind": "filter_bar", "props": { "collection": "incidentEvents" } },
-        { "id": "table", "kind": "table", "data_ref": "incidents", "props": { "collection": "incidentEvents", "row_navigation": "/incidents/{name}" } }
+        {
+          "id": "table",
+          "kind": "table",
+          "data_ref": "incidents",
+          "props": {
+            "table": {
+              "collection": "incidentEvents",
+              "columns": [
+                { "id": "title", "field": "title", "label": "Title", "sortable": false, "visible": true },
+                { "id": "service", "field": "service", "label": "Service", "sortable": false, "visible": true },
+                { "id": "severity", "field": "severity", "label": "Severity", "sortable": false, "visible": true },
+                { "id": "created", "field": "created_at", "label": "Created", "sortable": true, "visible": true },
+                { "id": "acknowledged", "field": "acknowledged", "label": "Acknowledged", "sortable": false, "visible": true }
+              ],
+              "row_navigation": "/incidents/{name}",
+              "row_actions": ["open", "update", "acknowledge", "delete"],
+              "bulk_actions": ["acknowledge", "delete"]
+            }
+          }
+        }
       ]
     },
     {
@@ -294,7 +313,19 @@
       ],
       "components": [
         { "id": "header", "kind": "detail_header", "data_ref": "incident", "props": { "title_path": "title", "subtitle_path": "service" } },
-        { "id": "payload", "kind": "table", "data_ref": "incident.payload", "props": { "collection": "incidentEvents" } }
+        {
+          "id": "payload",
+          "kind": "table",
+          "data_ref": "incident.payload",
+          "props": {
+            "table": {
+              "collection": "incidentEvents",
+              "columns": [
+                { "id": "payload", "field": "payload", "label": "Payload", "sortable": false, "visible": true }
+              ]
+            }
+          }
+        }
       ]
     },
     {

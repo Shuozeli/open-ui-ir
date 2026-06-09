@@ -1,5 +1,5 @@
 import type { CompileContext, CompileOutput, CompilerTarget, TargetManifest } from "@open-ui-ir/compiler-core";
-import type { ChartKind, ComponentSpec } from "@open-ui-ir/protocol";
+import type { ChartKind, ComponentSpec, TableSpec } from "@open-ui-ir/protocol";
 
 export const reactAntdManifest: TargetManifest = {
   name: "react-antd",
@@ -61,8 +61,28 @@ function compileComponent(component: ComponentSpec): string {
   if (component.kind === "chart") {
     return compileChart(component);
   }
+  if (component.kind === "table") {
+    return compileTable(component);
+  }
   return `<Card size="small">
         <Table rowKey="name" dataSource={rows} loading={loading} pagination={false} />
+      </Card>`;
+}
+
+function compileTable(component: ComponentSpec): string {
+  const table = readTable(component);
+  const columns = table.columns
+    .filter((column) => column.visible !== false)
+    .map((column) => ({
+      title: column.label ?? column.field,
+      dataIndex: column.field,
+      key: column.id,
+      ...(column.width !== undefined ? { width: column.width } : {}),
+      ...(column.align !== undefined ? { align: antTableAlign(column.align) } : {}),
+      ...(column.sortable === true ? { sorter: true } : {}),
+    }));
+  return `<Card size="small">
+        <Table rowKey="name" columns={${JSON.stringify(columns)}} dataSource={rows} loading={loading} pagination={false} />
       </Card>`;
 }
 
@@ -98,6 +118,20 @@ function readChart(component: ComponentSpec): {
     throw new Error(`chart component ${component.id} is missing props.chart`);
   }
   return chart as ReturnType<typeof readChart>;
+}
+
+function readTable(component: ComponentSpec): TableSpec {
+  const table = (component.props as { table?: unknown }).table;
+  if (!table || typeof table !== "object") {
+    throw new Error(`table component ${component.id} is missing props.table`);
+  }
+  return table as TableSpec;
+}
+
+function antTableAlign(align: "start" | "center" | "end"): "left" | "center" | "right" {
+  if (align === "start") return "left";
+  if (align === "end") return "right";
+  return "center";
 }
 
 function antvComponent(kind: ChartKind): string {

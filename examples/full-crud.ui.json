@@ -195,7 +195,26 @@
       ],
       "components": [
         { "id": "filters", "kind": "filter_bar", "props": { "collection": "workItems" } },
-        { "id": "table", "kind": "table", "data_ref": "rows", "props": { "collection": "workItems", "row_navigation": "/work-items/{name}" } }
+        {
+          "id": "table",
+          "kind": "table",
+          "data_ref": "rows",
+          "props": {
+            "table": {
+              "collection": "workItems",
+              "columns": [
+                { "id": "title", "field": "title", "label": "Title", "sortable": false, "visible": true },
+                { "id": "state", "field": "state", "label": "State", "sortable": false, "visible": true },
+                { "id": "priority", "field": "priority", "label": "Priority", "sortable": false, "visible": true },
+                { "id": "owner", "field": "owner", "label": "Owner", "sortable": false, "visible": true },
+                { "id": "updated", "field": "updated_at", "label": "Updated", "sortable": true, "visible": true }
+              ],
+              "row_navigation": "/work-items/{name}",
+              "row_actions": ["open", "update", "close", "delete"],
+              "bulk_actions": ["close", "delete"]
+            }
+          }
+        }
       ]
     },
     {
@@ -216,7 +235,19 @@
       ],
       "components": [
         { "id": "header", "kind": "detail_header", "data_ref": "item", "props": { "title_path": "title", "subtitle_path": "state" } },
-        { "id": "payload", "kind": "table", "data_ref": "item.payload", "props": { "collection": "workItems" } }
+        {
+          "id": "payload",
+          "kind": "table",
+          "data_ref": "item.payload",
+          "props": {
+            "table": {
+              "collection": "workItems",
+              "columns": [
+                { "id": "payload", "field": "payload", "label": "Payload", "sortable": false, "visible": true }
+              ]
+            }
+          }
+        }
       ]
     },
     {

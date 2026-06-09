@@ -49,6 +49,18 @@ The current stable chart intents are:
 - `gauge`
 - `liquid`
 
+Table components declare `props.table` with:
+
+- a collection reference
+- explicit columns
+- optional row navigation
+- optional row actions
+- optional bulk actions
+
+Table columns bind to collection fields and declare labels, visibility,
+sortable intent, width, and alignment. Sortable columns are currently limited to
+fields that participate in the collection's keyset pagination ordering.
+
 ### Interaction Model
 
 The current stable action methods are:
@@ -104,6 +116,8 @@ that lowering.
 - duplicate route data binding names
 - component `data_ref` references to route bindings
 - component `props.collection` references to collections
+- table props, collection references, columns, sortable fields, row actions, and
+  bulk actions
 - chart props, chart kind, and non-empty chart encoding
 - target manifests against document requirements, including layouts,
   components, field renderers, filters, actions, chart kinds, and transports
@@ -143,6 +157,5 @@ in `@open-ui-ir/demo-suite`.
 
 The next contract additions should happen in this order:
 
-1. Table column contract for sorting, visibility, row actions, and bulk actions.
-2. Detail sections, tabs, related-resource panels, and timeline components.
-3. GraphQL/OpenAPI introspection input that can generate initial IR documents.
+1. Detail sections, tabs, related-resource panels, and timeline components.
+2. GraphQL/OpenAPI introspection input that can generate initial IR documents.

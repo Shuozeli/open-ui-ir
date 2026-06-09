@@ -44,10 +44,57 @@ describe("validateDocument", () => {
   it("validates route component references", () => {
     const doc = structuredClone(exampleDocument);
     doc.routes[0]!.components[1]!.data_ref = "missingRows";
-    (doc.routes[0]!.components[1]!.props as { collection?: string }).collection = "missingProducts";
+    (doc.routes[0]!.components[1]!.props as { table: { collection: string } }).table.collection = "missingProducts";
 
     expect(validateDocument(doc).map((d) => d.code)).toEqual(
       expect.arrayContaining(["unknown_data_ref", "unknown_collection_ref"]),
+    );
+  });
+
+  it("validates table contracts", () => {
+    const doc = structuredClone(exampleDocument);
+    doc.collections[0]!.actions = [
+      {
+        name: "open",
+        label: "Open",
+        method: "get",
+        binding: { transport: "graphql", operation: "product", result_path: "product", variables: {} },
+      },
+      {
+        name: "archive",
+        label: "Archive",
+        method: "custom",
+        binding: { transport: "graphql", operation: "archiveProduct", result_path: "archiveProduct", variables: {} },
+      },
+    ];
+    doc.routes[0]!.components.push({ id: "empty-table", kind: "table", props: {} });
+    (doc.routes[0]!.components[1]!.props as {
+      table: {
+        collection: string;
+        columns: Array<{ id: string; field: string; sortable?: boolean }>;
+        row_actions: string[];
+        bulk_actions: string[];
+      };
+    }).table = {
+      collection: "products",
+      columns: [
+        { id: "title", field: "title", sortable: true },
+        { id: "title", field: "missing" },
+      ],
+      row_actions: ["missing"],
+      bulk_actions: ["missing", "open", "archive"],
+    };
+
+    expect(validateDocument(doc).map((d) => d.code)).toEqual(
+      expect.arrayContaining([
+        "missing_table_props",
+        "duplicate_table_column",
+        "unknown_table_column_field",
+        "unsortable_table_column",
+        "unknown_table_row_action",
+        "unknown_table_bulk_action",
+        "invalid_table_bulk_action",
+      ]),
     );
   });
 

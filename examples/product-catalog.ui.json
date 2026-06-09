@@ -78,7 +78,22 @@
       ],
       "components": [
         { "id": "filters", "kind": "filter_bar", "props": {} },
-        { "id": "table", "kind": "table", "data_ref": "rows", "props": { "collection": "products" } }
+        {
+          "id": "table",
+          "kind": "table",
+          "data_ref": "rows",
+          "props": {
+            "table": {
+              "collection": "products",
+              "columns": [
+                { "id": "title", "field": "title", "label": "Title", "sortable": false, "visible": true },
+                { "id": "category", "field": "category", "label": "Category", "sortable": false, "visible": true },
+                { "id": "price", "field": "price", "label": "Price", "sortable": false, "visible": true },
+                { "id": "updated", "field": "updated_at", "label": "Updated", "sortable": true, "visible": true }
+              ]
+            }
+          }
+        }
       ]
     },
     {

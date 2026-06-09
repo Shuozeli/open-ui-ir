@@ -9,6 +9,7 @@ import type {
   QueryBinding,
   ResourceFieldSpec,
   ResourceCollectionSpec,
+  TableSpec,
   UiRouteSpec,
 } from "@open-ui-ir/protocol";
 import { PROTOCOL_VERSION } from "@open-ui-ir/protocol";
@@ -93,7 +94,7 @@ export function validateDocument(document: OpenUiDocument): Diagnostic[] {
     diagnostics.push(error("protocol_version", `expected ${PROTOCOL_VERSION}`, "/protocol_version"));
   }
 
-  const collectionNames = new Set(document.collections.map((collection) => collection.name));
+  const collections = new Map(document.collections.map((collection) => [collection.name, collection]));
 
   const routeSet = new Set<string>();
   document.routes.forEach((route, index) => {
@@ -104,7 +105,7 @@ export function validateDocument(document: OpenUiDocument): Diagnostic[] {
     requireLayout(document, route, index, diagnostics);
     requireComponents(document, route, index, diagnostics);
     requireRouteBindings(route, index, diagnostics);
-    requireComponentReferences(collectionNames, route, index, diagnostics);
+    requireComponentReferences(collections, route, index, diagnostics);
   });
 
   const collectionSet = new Set<string>();
@@ -279,6 +280,9 @@ function requireComponents(
     }
     if (component.kind === "chart") {
       requireChartProps(component, routeIndex, componentIndex, diagnostics);
+    }
+    if (component.kind === "table") {
+      requireTableProps(component, routeIndex, componentIndex, diagnostics);
     }
   }
 }
@@ -562,7 +566,7 @@ function requireRouteBindings(route: UiRouteSpec, routeIndex: number, diagnostic
 }
 
 function requireComponentReferences(
-  collectionNames: Set<string>,
+  collections: Map<string, ResourceCollectionSpec>,
   route: UiRouteSpec,
   routeIndex: number,
   diagnostics: Diagnostic[],
@@ -580,12 +584,138 @@ function requireComponentReferences(
     }
 
     const collection = collectionProp(component);
-    if (collection !== undefined && !collectionNames.has(collection)) {
+    if (collection !== undefined && !collections.has(collection)) {
       diagnostics.push(
         error(
           "unknown_collection_ref",
           `collection ${collection} is not declared`,
           `/routes/${routeIndex}/components/${componentIndex}/props/collection`,
+        ),
+      );
+    }
+
+    if (component.kind === "table") {
+      const table = tableProp(component);
+      if (table !== undefined) {
+        const tableCollection = collections.get(table.collection);
+        if (tableCollection !== undefined) {
+          requireTableContract(table, tableCollection, routeIndex, componentIndex, diagnostics);
+        }
+      }
+    }
+  });
+}
+
+function requireTableProps(
+  component: ComponentSpec,
+  routeIndex: number,
+  componentIndex: number,
+  diagnostics: Diagnostic[],
+): void {
+  const table = tableProp(component);
+  if (table === undefined) {
+    diagnostics.push(
+      error("missing_table_props", "table component must include props.table", `/routes/${routeIndex}/components/${componentIndex}/props/table`),
+    );
+    return;
+  }
+  if (typeof table.collection !== "string") {
+    diagnostics.push(
+      error(
+        "missing_table_collection",
+        "table component must declare props.table.collection",
+        `/routes/${routeIndex}/components/${componentIndex}/props/table/collection`,
+      ),
+    );
+  }
+  if (!Array.isArray(table.columns) || table.columns.length === 0) {
+    diagnostics.push(
+      error(
+        "missing_table_columns",
+        "table component must declare at least one column",
+        `/routes/${routeIndex}/components/${componentIndex}/props/table/columns`,
+      ),
+    );
+  }
+}
+
+function requireTableContract(
+  table: TableSpec,
+  collection: ResourceCollectionSpec,
+  routeIndex: number,
+  componentIndex: number,
+  diagnostics: Diagnostic[],
+): void {
+  const fields = fieldSet(collection);
+  const sortableFields = new Set(collection.pagination.order_by.map((sort) => sort.field));
+  const actions = new Map(collection.actions.map((action) => [action.name, action]));
+  const columnIds = new Set<string>();
+
+  if (!Array.isArray(table.columns)) return;
+
+  table.columns.forEach((column, columnIndex) => {
+    if (columnIds.has(column.id)) {
+      diagnostics.push(
+        error(
+          "duplicate_table_column",
+          `duplicate table column ${column.id}`,
+          `/routes/${routeIndex}/components/${componentIndex}/props/table/columns/${columnIndex}/id`,
+        ),
+      );
+    }
+    columnIds.add(column.id);
+
+    if (!fields.has(column.field)) {
+      diagnostics.push(
+        error(
+          "unknown_table_column_field",
+          `table column field ${column.field} is not in collection ${collection.name}`,
+          `/routes/${routeIndex}/components/${componentIndex}/props/table/columns/${columnIndex}/field`,
+        ),
+      );
+    }
+
+    if (column.sortable === true && !sortableFields.has(column.field)) {
+      diagnostics.push(
+        error(
+          "unsortable_table_column",
+          `table column ${column.id} marks ${column.field} sortable but collection pagination does not order by it`,
+          `/routes/${routeIndex}/components/${componentIndex}/props/table/columns/${columnIndex}/sortable`,
+        ),
+      );
+    }
+  });
+
+  table.row_actions?.forEach((actionName, actionIndex) => {
+    if (!actions.has(actionName)) {
+      diagnostics.push(
+        error(
+          "unknown_table_row_action",
+          `row action ${actionName} is not declared on collection ${collection.name}`,
+          `/routes/${routeIndex}/components/${componentIndex}/props/table/row_actions/${actionIndex}`,
+        ),
+      );
+    }
+  });
+
+  table.bulk_actions?.forEach((actionName, actionIndex) => {
+    const action = actions.get(actionName);
+    if (action === undefined) {
+      diagnostics.push(
+        error(
+          "unknown_table_bulk_action",
+          `bulk action ${actionName} is not declared on collection ${collection.name}`,
+          `/routes/${routeIndex}/components/${componentIndex}/props/table/bulk_actions/${actionIndex}`,
+        ),
+      );
+      return;
+    }
+    if (action.method === "get" || action.method === "create") {
+      diagnostics.push(
+        error(
+          "invalid_table_bulk_action",
+          `bulk action ${actionName} must be update, delete, or custom`,
+          `/routes/${routeIndex}/components/${componentIndex}/props/table/bulk_actions/${actionIndex}`,
         ),
       );
     }
@@ -634,6 +764,9 @@ function rootPath(path: string): string {
 }
 
 function collectionProp(component: ComponentSpec): string | undefined {
+  const table = tableProp(component);
+  if (table !== undefined) return table.collection;
+
   const value = (component.props as { collection?: unknown }).collection;
   return typeof value === "string" ? value : undefined;
 }
@@ -641,6 +774,12 @@ function collectionProp(component: ComponentSpec): string | undefined {
 function chartKindProp(component: ComponentSpec): string | undefined {
   const chart = (component.props as { chart?: { kind?: unknown } }).chart;
   return chart && typeof chart === "object" && typeof chart.kind === "string" ? chart.kind : undefined;
+}
+
+function tableProp(component: ComponentSpec): TableSpec | undefined {
+  const table = (component.props as { table?: unknown }).table;
+  if (!table || typeof table !== "object") return undefined;
+  return table as TableSpec;
 }
 
 function error(code: string, message: string, path: string): Diagnostic {
