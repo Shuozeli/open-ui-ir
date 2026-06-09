@@ -1,0 +1,277 @@
+{
+  "protocol_version": "open-ui-ir.v1",
+  "app_name": "work-items",
+  "display_name": "Work Items",
+  "default_locale": "en-US",
+  "locales": [{ "locale": "en-US", "label": "English" }],
+  "messages": {
+    "en-US": {}
+  },
+  "capabilities": {
+    "layouts": ["crud_list", "detail_page", "dashboard"],
+    "component_kinds": ["filter_bar", "table", "detail_header", "metric_row", "chart"],
+    "field_renderers": [
+      { "kind": "text", "description": "Plain text" },
+      { "kind": "badge", "description": "Compact categorical value" },
+      { "kind": "datetime", "description": "Locale-aware timestamp" },
+      { "kind": "number", "description": "Locale-aware number" },
+      { "kind": "json", "description": "Structured JSON payload" }
+    ],
+    "filter_kinds": ["text", "select", "multi_select", "date_range", "boolean"],
+    "action_methods": ["get", "create", "update", "delete", "custom"]
+  },
+  "collections": [
+    {
+      "name": "workItems",
+      "resource_type": "WorkItem",
+      "plural_field": "workItems",
+      "list": {
+        "transport": "graphql",
+        "operation": "workItems",
+        "result_path": "workItems.workItems",
+        "variables": {
+          "page_size": "$page.page_size",
+          "page_token": "$page.page_token",
+          "filter": "$filters"
+        }
+      },
+      "get": {
+        "transport": "graphql",
+        "operation": "workItem",
+        "result_path": "workItem",
+        "variables": {
+          "name": "$route.name"
+        }
+      },
+      "fields": [
+        { "name": "name", "value_type": "string", "renderer": "text", "required": true, "output_only": true },
+        { "name": "title", "value_type": "string", "renderer": "text", "required": true, "output_only": false },
+        { "name": "state", "value_type": "string", "renderer": "badge", "required": true, "output_only": false },
+        { "name": "priority", "value_type": "string", "renderer": "badge", "required": false, "output_only": false },
+        { "name": "owner", "value_type": "string", "renderer": "text", "required": false, "output_only": false },
+        { "name": "blocked", "value_type": "boolean", "renderer": "badge", "required": false, "output_only": false },
+        { "name": "estimate_points", "value_type": "number", "renderer": "number", "required": false, "output_only": false },
+        { "name": "updated_at", "value_type": "datetime", "renderer": "datetime", "required": true, "output_only": true },
+        { "name": "payload", "value_type": "json", "renderer": "json", "required": false, "output_only": true }
+      ],
+      "filters": [
+        { "name": "q", "label": "Search", "kind": "text", "cel_field": "title" },
+        {
+          "name": "state",
+          "label": "State",
+          "kind": "select",
+          "cel_field": "state",
+          "options": [
+            { "label": "Open", "value": "open" },
+            { "label": "In Progress", "value": "in_progress" },
+            { "label": "Done", "value": "done" }
+          ]
+        },
+        {
+          "name": "priority",
+          "label": "Priority",
+          "kind": "multi_select",
+          "cel_field": "priority",
+          "options": [
+            { "label": "High", "value": "high" },
+            { "label": "Medium", "value": "medium" },
+            { "label": "Low", "value": "low" }
+          ]
+        },
+        { "name": "updated", "label": "Updated", "kind": "date_range", "cel_field": "updated_at" },
+        { "name": "blocked", "label": "Blocked", "kind": "boolean", "cel_field": "blocked" }
+      ],
+      "actions": [
+        {
+          "name": "open",
+          "label": "Open",
+          "method": "get",
+          "binding": {
+            "transport": "graphql",
+            "operation": "workItem",
+            "result_path": "workItem",
+            "variables": { "name": "$resource.name" }
+          }
+        },
+        {
+          "name": "create",
+          "label": "Create",
+          "method": "create",
+          "binding": {
+            "transport": "graphql",
+            "operation": "createWorkItem",
+            "result_path": "createWorkItem",
+            "variables": { "body": "$form" }
+          },
+          "form": {
+            "fields": [
+              { "field": "title", "label": "Title", "control": "text", "required": true },
+              { "field": "state", "label": "State", "control": "select", "required": true },
+              { "field": "priority", "label": "Priority", "control": "select" },
+              { "field": "owner", "label": "Owner", "control": "text" },
+              { "field": "blocked", "label": "Blocked", "control": "checkbox" },
+              { "field": "estimate_points", "label": "Estimate", "control": "number" }
+            ]
+          }
+        },
+        {
+          "name": "update",
+          "label": "Update",
+          "method": "update",
+          "binding": {
+            "transport": "graphql",
+            "operation": "updateWorkItem",
+            "result_path": "updateWorkItem",
+            "variables": { "name": "$resource.name", "body": "$form", "update_mask": "$form.update_mask" }
+          },
+          "form": {
+            "fields": [
+              { "field": "title", "label": "Title", "control": "text", "required": true },
+              { "field": "state", "label": "State", "control": "select", "required": true },
+              { "field": "priority", "label": "Priority", "control": "select" },
+              { "field": "owner", "label": "Owner", "control": "text" },
+              { "field": "blocked", "label": "Blocked", "control": "checkbox" },
+              { "field": "estimate_points", "label": "Estimate", "control": "number" }
+            ],
+            "update_mask": { "variable": "update_mask", "value_path": "$form.update_mask" }
+          }
+        },
+        {
+          "name": "close",
+          "label": "Close",
+          "method": "custom",
+          "binding": {
+            "transport": "graphql",
+            "operation": "closeWorkItem",
+            "result_path": "closeWorkItem",
+            "variables": { "name": "$resource.name" }
+          }
+        },
+        {
+          "name": "delete",
+          "label": "Delete",
+          "method": "delete",
+          "binding": {
+            "transport": "graphql",
+            "operation": "deleteWorkItem",
+            "result_path": "deleteWorkItem",
+            "variables": { "name": "$resource.name" }
+          }
+        }
+      ],
+      "pagination": {
+        "kind": "keyset",
+        "page_size_param": "page_size",
+        "page_token_param": "page_token",
+        "next_page_token_path": "workItems.nextPageToken",
+        "order_by": [
+          { "field": "updated_at", "direction": "desc" },
+          { "field": "name", "direction": "asc" }
+        ],
+        "unique_key_fields": ["name"]
+      }
+    }
+  ],
+  "routes": [
+    {
+      "route": "/work-items",
+      "title": "Work Items",
+      "layout": "crud_list",
+      "navigation": { "group": "Work", "order": 1 },
+      "data_bindings": [
+        {
+          "name": "rows",
+          "query": {
+            "transport": "graphql",
+            "operation": "workItems",
+            "result_path": "workItems.workItems",
+            "variables": {
+              "page_size": "$page.page_size",
+              "page_token": "$page.page_token",
+              "filter": "$filters"
+            }
+          }
+        }
+      ],
+      "components": [
+        { "id": "filters", "kind": "filter_bar", "props": { "collection": "workItems" } },
+        { "id": "table", "kind": "table", "data_ref": "rows", "props": { "collection": "workItems", "row_navigation": "/work-items/{name}" } }
+      ]
+    },
+    {
+      "route": "/work-items/:name",
+      "title": "Work Item Detail",
+      "layout": "detail_page",
+      "navigation": { "group": "Work", "order": 2 },
+      "data_bindings": [
+        {
+          "name": "item",
+          "query": {
+            "transport": "graphql",
+            "operation": "workItem",
+            "result_path": "workItem",
+            "variables": { "name": "$route.name" }
+          }
+        }
+      ],
+      "components": [
+        { "id": "header", "kind": "detail_header", "data_ref": "item", "props": { "title_path": "title", "subtitle_path": "state" } },
+        { "id": "payload", "kind": "table", "data_ref": "item.payload", "props": { "collection": "workItems" } }
+      ]
+    },
+    {
+      "route": "/work-items/dashboard",
+      "title": "Work Item Dashboard",
+      "layout": "dashboard",
+      "navigation": { "group": "Work", "order": 3 },
+      "data_bindings": [
+        {
+          "name": "stats",
+          "query": {
+            "transport": "graphql",
+            "operation": "workItemStats",
+            "result_path": "workItemStats",
+            "variables": {}
+          }
+        },
+        {
+          "name": "series",
+          "query": {
+            "transport": "graphql",
+            "operation": "workItemSeries",
+            "result_path": "workItemSeries.points",
+            "variables": {}
+          }
+        }
+      ],
+      "components": [
+        {
+          "id": "kpis",
+          "kind": "metric_row",
+          "data_ref": "stats",
+          "props": {
+            "metrics": [
+              { "id": "open", "label": "Open", "value_path": "open_count", "format": "number" },
+              { "id": "blocked", "label": "Blocked", "value_path": "blocked_count", "format": "number" },
+              { "id": "done_rate", "label": "Done Rate", "value_path": "done_rate", "format": "percent" }
+            ]
+          }
+        },
+        {
+          "id": "throughput",
+          "kind": "chart",
+          "data_ref": "series",
+          "props": {
+            "chart": {
+              "kind": "bar",
+              "title": "Throughput",
+              "encoding": { "x": "day", "y": "completed_count", "color": "priority" },
+              "height": 280,
+              "stack": true
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

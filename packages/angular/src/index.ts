@@ -1,7 +1,34 @@
-import type { CompileContext, CompileOutput, CompilerTarget } from "@open-ui-ir/compiler-core";
+import type { CompileContext, CompileOutput, CompilerTarget, TargetManifest } from "@open-ui-ir/compiler-core";
+
+export const angularManifest: TargetManifest = {
+  name: "angular",
+  layouts: ["crud_list", "detail_page", "dashboard"],
+  component_kinds: ["filter_bar", "table", "detail_header", "metric_row", "chart", "chart_grid"],
+  field_renderers: ["text", "badge", "datetime", "number", "external_link", "json"],
+  filter_kinds: ["text", "select", "multi_select", "date_range", "boolean"],
+  action_methods: ["get", "create", "update", "delete", "custom"],
+  chart_kinds: [
+    "line",
+    "bar",
+    "area",
+    "pie",
+    "heatmap",
+    "scatter",
+    "radar",
+    "rose",
+    "radial_bar",
+    "funnel",
+    "treemap",
+    "word_cloud",
+    "gauge",
+    "liquid",
+  ],
+  transports: ["graphql", "rest"],
+};
 
 export const angularTarget: CompilerTarget = {
   name: "angular",
+  manifest: angularManifest,
   compile(context: CompileContext): CompileOutput {
     return {
       target: "angular",

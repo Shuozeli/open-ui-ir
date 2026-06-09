@@ -51,6 +51,8 @@ AntD target lowers these to `@ant-design/charts` components.
 See [docs/general-framework-design.md](docs/general-framework-design.md) for the
 broader compiler architecture: semantic IR, presentation IR, interaction IR,
 data-binding IR, and target lowering for multiple frameworks and UI libraries.
+See [docs/feature-contract.md](docs/feature-contract.md) for the current stable
+feature surface, validator guarantees, and target manifest compatibility checks.
 
 ## Status
 
@@ -78,6 +80,8 @@ in CI by `@open-ui-ir/demo-suite`:
   update/delete/custom actions, i18n metadata, list/detail/dashboard routes,
   metrics, chart grid, and line/bar/area/pie/heatmap/scatter/radar/rose/
   radial-bar/funnel/treemap/word-cloud/gauge/liquid chart intent.
+- `full-crud.ui.json` -- non-domain-specific CRUD/list/detail/dashboard fixture
+  used to keep contract coverage independent from the incident demo.
 
 `demo-backend/` is a Rust GraphQL demo backend that exposes both the UI Spike
 document and the demo resource operations. `demo-ui/` is a fixed React AntD

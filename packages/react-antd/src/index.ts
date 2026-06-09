@@ -1,8 +1,35 @@
-import type { CompileContext, CompileOutput, CompilerTarget } from "@open-ui-ir/compiler-core";
+import type { CompileContext, CompileOutput, CompilerTarget, TargetManifest } from "@open-ui-ir/compiler-core";
 import type { ChartKind, ComponentSpec } from "@open-ui-ir/protocol";
+
+export const reactAntdManifest: TargetManifest = {
+  name: "react-antd",
+  layouts: ["crud_list", "detail_page", "dashboard"],
+  component_kinds: ["filter_bar", "table", "detail_header", "metric_row", "chart", "chart_grid"],
+  field_renderers: ["text", "badge", "datetime", "number", "external_link", "json"],
+  filter_kinds: ["text", "select", "multi_select", "date_range", "boolean"],
+  action_methods: ["get", "create", "update", "delete", "custom"],
+  chart_kinds: [
+    "line",
+    "bar",
+    "area",
+    "pie",
+    "heatmap",
+    "scatter",
+    "radar",
+    "rose",
+    "radial_bar",
+    "funnel",
+    "treemap",
+    "word_cloud",
+    "gauge",
+    "liquid",
+  ],
+  transports: ["graphql", "rest"],
+};
 
 export const reactAntdTarget: CompilerTarget = {
   name: "react-antd",
+  manifest: reactAntdManifest,
   compile(context: CompileContext): CompileOutput {
     return {
       target: "react-antd",

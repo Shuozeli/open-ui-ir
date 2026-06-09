@@ -172,6 +172,15 @@
             "variables": {
               "body": "$form"
             }
+          },
+          "form": {
+            "fields": [
+              { "field": "title", "label": "Title", "control": "text", "required": true },
+              { "field": "service", "label": "Service", "control": "select", "required": true },
+              { "field": "severity", "label": "Severity", "control": "select", "required": true },
+              { "field": "acknowledged", "label": "Acknowledged", "control": "checkbox" },
+              { "field": "external_url", "label": "External URL", "control": "text" }
+            ]
           }
         },
         {
@@ -187,6 +196,16 @@
               "body": "$form",
               "update_mask": "$form.update_mask"
             }
+          },
+          "form": {
+            "fields": [
+              { "field": "title", "label": "Title", "control": "text", "required": true },
+              { "field": "service", "label": "Service", "control": "select", "required": true },
+              { "field": "severity", "label": "Severity", "control": "select", "required": true },
+              { "field": "acknowledged", "label": "Acknowledged", "control": "checkbox" },
+              { "field": "external_url", "label": "External URL", "control": "text" }
+            ],
+            "update_mask": { "variable": "update_mask", "value_path": "$form.update_mask" }
           }
         },
         {

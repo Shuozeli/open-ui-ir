@@ -54,6 +54,18 @@ describe("examples", () => {
     expect(new Set(collections.flatMap((collection) => collection.actions.map((action) => action.method)))).toEqual(
       new Set(["get", "create", "update", "delete", "custom"]),
     );
+    expect(
+      new Set(
+        collections.flatMap((collection) =>
+          collection.actions.flatMap((action) => action.form?.fields.map((field) => field.control) ?? []),
+        ),
+      ),
+    ).toEqual(new Set(["text", "select", "checkbox"]));
+    expect(
+      collections
+        .flatMap((collection) => collection.actions)
+        .find((action) => action.method === "update")?.form?.update_mask,
+    ).toEqual({ variable: "update_mask", value_path: "$form.update_mask" });
 
     const routes = document.routes;
     expect(new Set(routes.map((route) => route.layout))).toEqual(new Set(["crud_list", "detail_page", "dashboard"]));

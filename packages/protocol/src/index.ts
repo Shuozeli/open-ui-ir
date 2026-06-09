@@ -26,6 +26,7 @@ export type ChartKind =
 export type FilterKind = "text" | "select" | "multi_select" | "date_range" | "boolean";
 export type ActionMethod = "get" | "create" | "update" | "delete" | "custom";
 export type SortDirection = "asc" | "desc";
+export type FormControlKind = "text" | "textarea" | "number" | "checkbox" | "select" | "multi_select" | "date_time" | "json";
 
 export interface OpenUiDocument {
   protocol_version: typeof PROTOCOL_VERSION;
@@ -191,6 +192,25 @@ export interface ActionSpec {
   label: string;
   method: ActionMethod;
   binding: QueryBinding;
+  form?: ActionFormSpec;
+}
+
+export interface ActionFormSpec {
+  fields: FormFieldSpec[];
+  update_mask?: UpdateMaskSpec;
+}
+
+export interface FormFieldSpec {
+  field: string;
+  label?: string;
+  control: FormControlKind;
+  required?: boolean;
+  options?: FilterOption[];
+}
+
+export interface UpdateMaskSpec {
+  variable: string;
+  value_path: "$form.update_mask";
 }
 
 export function resourceName(collection: string, id: string): string {
