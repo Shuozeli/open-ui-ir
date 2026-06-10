@@ -10,7 +10,8 @@
       "@open-ui-ir/compiler-core/test-fixture": ["packages/compiler-core/src/test-fixture.ts"],
       "@open-ui-ir/react-antd": ["packages/react-antd/src/index.ts"],
       "@open-ui-ir/angular": ["packages/angular/src/index.ts"],
-      "@open-ui-ir/tui": ["packages/tui/src/index.ts"]
+      "@open-ui-ir/tui": ["packages/tui/src/index.ts"],
+      "@open-ui-ir/cli": ["packages/cli/src/index.ts"]
     },
     "types": ["node"],
     "composite": true,

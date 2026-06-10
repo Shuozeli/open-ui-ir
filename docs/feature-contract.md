@@ -177,9 +177,19 @@ The `examples/` directory is contract coverage, not just demo data:
 Every `*.ui.json` file must validate cleanly and compile to all current targets
 in `@open-ui-ir/demo-suite`.
 
+## CLI
+
+`@open-ui-ir/cli` exposes the current contract checks and compiler targets:
+
+- `open-ui-ir validate [--json] <file...>`
+- `open-ui-ir compile --target <react-antd|angular|tui> [--out <dir>] [--json] <file>`
+
+Validation returns a non-zero exit code when diagnostics are present. Compile
+also validates target compatibility before writing files.
+
 ## Next Contract Work
 
 The next contract additions should happen in this order:
 
 1. GraphQL/OpenAPI introspection input that can generate initial IR documents.
-2. CLI tooling for validation and target compilation.
+2. Runtime renderer conformance tests for pushed UI documents.

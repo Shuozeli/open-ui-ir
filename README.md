@@ -43,6 +43,7 @@ server schema / YAML / JSON / GraphQL
 | `@open-ui-ir/react-antd` | compiler target that emits React AntD source |
 | `@open-ui-ir/angular` | compiler target that emits Angular standalone component source |
 | `@open-ui-ir/tui` | compiler target that emits a terminal UI model |
+| `@open-ui-ir/cli` | command-line validation and target compilation |
 
 Visualization support currently includes target-neutral `chart` intent with
 `line`, `bar`, `area`, `pie`, `heatmap`, and `scatter` chart kinds. The React
@@ -67,6 +68,13 @@ pnpm install
 pnpm typecheck
 pnpm test
 pnpm build
+```
+
+CLI examples:
+
+```bash
+pnpm --filter @open-ui-ir/cli open-ui-ir validate examples/product-catalog.ui.json
+pnpm --filter @open-ui-ir/cli open-ui-ir compile --target react-antd --out generated examples/product-catalog.ui.json
 ```
 
 ## Demos

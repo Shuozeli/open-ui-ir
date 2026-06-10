@@ -1,0 +1,33 @@
+{
+  "name": "@open-ui-ir/cli",
+  "version": "0.1.0",
+  "type": "module",
+  "bin": {
+    "open-ui-ir": "./dist/index.js"
+  },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "open-ui-ir": "node dist/index.js",
+    "typecheck": "tsc -b",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@open-ui-ir/angular": "workspace:*",
+    "@open-ui-ir/compiler-core": "workspace:*",
+    "@open-ui-ir/protocol": "workspace:*",
+    "@open-ui-ir/react-antd": "workspace:*",
+    "@open-ui-ir/tui": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0"
+  }
+}

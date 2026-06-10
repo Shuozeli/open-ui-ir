@@ -6,6 +6,7 @@
     { "path": "packages/react-antd" },
     { "path": "packages/angular" },
     { "path": "packages/tui" },
+    { "path": "packages/cli" },
     { "path": "packages/demo-suite" }
   ]
 }
