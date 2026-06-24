@@ -4,6 +4,15 @@ This document records the stable contract covered by examples and compiler
 validation. The goal is to keep Open UI IR as a framework boundary instead of a
 single hand-written demo renderer.
 
+The machine-readable wire shape is published at
+`schemas/open-ui-ir.v1.schema.json`. The JSON Schema validates structural
+shape, while `@open-ui-ir/compiler-core` performs semantic cross-reference and
+target-compatibility checks.
+
+For a field-by-field list of supported value types, binding values, layouts,
+components, filters, actions, metric formats, and chart encodings, see
+`docs/ir-format.md`.
+
 ## Stable Surface
 
 ### Semantic Resource Model
@@ -49,7 +58,7 @@ The current stable chart intents are:
 - `gauge`
 - `liquid`
 
-Table components declare `props.table` with:
+Table components declare a direct `table` object with:
 
 - a collection reference
 - explicit columns
@@ -61,7 +70,7 @@ Table columns bind to collection fields and declare labels, visibility,
 sortable intent, width, and alignment. Sortable columns are currently limited to
 fields that participate in the collection's keyset pagination ordering.
 
-Detail header components declare `props.detail` with:
+Detail header components declare a direct `detail` object with:
 
 - a collection reference
 - title, subtitle, and status fields
@@ -96,8 +105,8 @@ require multiple selection with `required_for_bulk_actions: true`.
 
 Create and update actions declare form schemas through `action.form`. Form
 schemas bind editable fields back to collection fields, choose target-neutral
-controls, and let update actions declare how `$form.update_mask` is sent to the
-backend.
+controls, and let update actions declare a typed `{ kind: "form", path:
+"update_mask" }` binding for backend update-mask variables.
 
 The current stable form controls are:
 
@@ -113,9 +122,11 @@ The current stable form controls are:
 ### Data Binding Model
 
 Bindings currently support `graphql` and `rest` transport declarations. A
-binding declares an operation, a result path, and variable mappings. The binding
-does not own the transport client implementation; each renderer or runtime owns
-that lowering.
+binding declares an operation, a typed `result.path`, and typed variable
+mappings such as `{ kind: "route", path: "name" }`, `{ kind: "resource", path:
+"name" }`, `{ kind: "form" }`, `{ kind: "page", path: "page_size" }`, and
+`{ kind: "filters" }`. The binding does not own the transport client
+implementation; each renderer or runtime owns that lowering.
 
 ## Validator Guarantees
 
@@ -134,11 +145,11 @@ that lowering.
 - keyset pagination field references
 - keyset pagination unique tie-breaker fields
 - duplicate route data binding names
-- component `data_ref` references to route bindings
-- component `props.collection` references to collections
-- table props, collection references, columns, sortable fields, row actions, and
+- component `data.binding` references to route bindings
+- component collection references to collections
+- table objects, collection references, columns, sortable fields, row actions, and
   bulk actions
-- detail props, header fields, actions, sections, tabs, related-resource panels,
+- detail objects, header fields, actions, sections, tabs, related-resource panels,
   timeline fields, and nested data refs
 - interaction lifecycle for submit behavior, outcomes, destructive
   confirmations, optimistic updates, and bulk-action selection policy
@@ -152,7 +163,7 @@ that lowering.
 - update form `update_mask` binding
 
 These checks intentionally focus on stable contract integrity. They do not yet
-validate every renderer-specific prop or infer every result-path shape.
+infer every transport result shape.
 
 ## Target Manifests
 

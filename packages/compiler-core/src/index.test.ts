@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import type { BindingValue, QueryBinding } from "@open-ui-ir/protocol";
 import type { TargetManifest } from "./index.js";
 import { compileDocument, validateDocument, validateTargetCompatibility } from "./index.js";
 import { exampleDocument } from "./test-fixture.js";
@@ -29,6 +30,21 @@ const compatibleManifest: TargetManifest = {
   transports: ["graphql", "rest"],
 };
 
+function graphqlBinding(
+  operation: string,
+  resultPath: string,
+  variables: Record<string, BindingValue> = {},
+): QueryBinding {
+  return {
+    transport: "graphql",
+    operation,
+    result: { path: resultPath },
+    variables,
+  };
+}
+
+const updateMaskBinding: BindingValue = { kind: "form", path: "update_mask" };
+
 describe("validateDocument", () => {
   it("accepts the example document", () => {
     expect(validateDocument(exampleDocument)).toEqual([]);
@@ -43,8 +59,8 @@ describe("validateDocument", () => {
 
   it("validates route component references", () => {
     const doc = structuredClone(exampleDocument);
-    doc.routes[0]!.components[1]!.data_ref = "missingRows";
-    (doc.routes[0]!.components[1]!.props as { table: { collection: string } }).table.collection = "missingProducts";
+    doc.routes[0]!.components[1]!.data = { binding: "missingRows" };
+    (doc.routes[0]!.components[1]! as { table: { collection: string } }).table.collection = "missingProducts";
 
     expect(validateDocument(doc).map((d) => d.code)).toEqual(
       expect.arrayContaining(["unknown_data_ref", "unknown_collection_ref"]),
@@ -58,17 +74,17 @@ describe("validateDocument", () => {
         name: "open",
         label: "Open",
         method: "get",
-        binding: { transport: "graphql", operation: "product", result_path: "product", variables: {} },
+        binding: graphqlBinding("product", "product"),
       },
       {
         name: "archive",
         label: "Archive",
         method: "custom",
-        binding: { transport: "graphql", operation: "archiveProduct", result_path: "archiveProduct", variables: {} },
+        binding: graphqlBinding("archiveProduct", "archiveProduct"),
       },
     ];
-    doc.routes[0]!.components.push({ id: "empty-table", kind: "table", props: {} });
-    (doc.routes[0]!.components[1]!.props as {
+    doc.routes[0]!.components.push({ id: "empty-table", kind: "table" } as never);
+    (doc.routes[0]!.components[1]! as {
       table: {
         collection: string;
         columns: Array<{ id: string; field: string; sortable?: boolean }>;
@@ -105,54 +121,52 @@ describe("validateDocument", () => {
         name: "open",
         label: "Open",
         method: "get",
-        binding: { transport: "graphql", operation: "product", result_path: "product", variables: {} },
+        binding: graphqlBinding("product", "product"),
       },
     ];
-    doc.routes[0]!.components.push({ id: "empty-detail", kind: "detail_header", props: {} });
+    doc.routes[0]!.components.push({ id: "empty-detail", kind: "detail_header" } as never);
     doc.routes[0]!.components.push({
       id: "detail",
       kind: "detail_header",
-      data_ref: "rows",
-      props: {
-        detail: {
-          collection: "products",
-          title_field: "missing_title",
-          subtitle_field: "missing_subtitle",
-          status_field: "missing_status",
-          actions: ["missing_action"],
-          sections: [
-            { id: "overview", label: "Overview", fields: ["title", "missing_field"] },
-            { id: "overview", label: "Duplicate", fields: ["category"] },
-          ],
-          tabs: [
-            { id: "main", label: "Main", sections: ["missing_section"], related: ["missing_related"] },
-            { id: "main", label: "Duplicate" },
-          ],
-          related: [
-            {
-              id: "siblings",
-              label: "Siblings",
-              collection: "missing_collection",
-              data_ref: "missingRows",
-              table: { collection: "products", columns: [{ id: "title", field: "title" }] },
-            },
-            {
-              id: "siblings",
-              label: "Duplicate",
-              collection: "products",
-              data_ref: "rows",
-              table: { collection: "otherProducts", columns: [{ id: "missing", field: "missing_field" }] },
-            },
-          ],
-          timeline: {
-            data_ref: "missingTimeline",
-            title_field: "missing_title",
-            time_field: "missing_time",
-            description_field: "missing_description",
+      data: { binding: "rows" },
+      detail: {
+        collection: "products",
+        title_field: "missing_title",
+        subtitle_field: "missing_subtitle",
+        status_field: "missing_status",
+        actions: ["missing_action"],
+        sections: [
+          { id: "overview", label: "Overview", fields: ["title", "missing_field"] },
+          { id: "overview", label: "Duplicate", fields: ["category"] },
+        ],
+        tabs: [
+          { id: "main", label: "Main", sections: ["missing_section"], related: ["missing_related"] },
+          { id: "main", label: "Duplicate" },
+        ],
+        related: [
+          {
+            id: "siblings",
+            label: "Siblings",
+            collection: "missing_collection",
+            data: { binding: "missingRows" },
+            table: { collection: "products", columns: [{ id: "title", field: "title" }] },
           },
+          {
+            id: "siblings",
+            label: "Duplicate",
+            collection: "products",
+            data: { binding: "rows" },
+            table: { collection: "otherProducts", columns: [{ id: "missing", field: "missing_field" }] },
+          },
+        ],
+        timeline: {
+          data: { binding: "missingTimeline" },
+          title_field: "missing_title",
+          time_field: "missing_time",
+          description_field: "missing_description",
         },
       },
-    });
+    } as never);
 
     expect(validateDocument(doc).map((d) => d.code)).toEqual(
       expect.arrayContaining([
@@ -204,10 +218,10 @@ describe("validateDocument", () => {
         name: "archive",
         label: "Archive",
         method: "archive" as "custom",
-        binding: { transport: "graphql", operation: "archiveProduct", result_path: "archiveProduct", variables: {} },
+        binding: graphqlBinding("archiveProduct", "archiveProduct"),
       },
     ];
-    (doc.routes[1]!.components[0]!.props as { chart: { kind: string; encoding: Record<string, string> } }).chart = {
+    (doc.routes[1]!.components[0]! as unknown as { chart: { kind: string; encoding: Record<string, string> } }).chart = {
       kind: "unsupported-chart",
       encoding: {},
     };
@@ -224,7 +238,7 @@ describe("validateDocument", () => {
         name: "create",
         label: "Create",
         method: "create",
-        binding: { transport: "graphql", operation: "createProduct", result_path: "createProduct", variables: {} },
+        binding: graphqlBinding("createProduct", "createProduct"),
         form: {
           fields: [
             { field: "title", control: "number" },
@@ -239,14 +253,11 @@ describe("validateDocument", () => {
         label: "Update",
         method: "update",
         binding: {
-          transport: "graphql",
-          operation: "updateProduct",
-          result_path: "updateProduct",
-          variables: { update_mask: "$form" },
+          ...graphqlBinding("updateProduct", "updateProduct", { update_mask: { kind: "form" } }),
         },
         form: {
           fields: [{ field: "title", control: "text" }],
-          update_mask: { variable: "update_mask", value_path: "$form.update_mask" },
+          update_mask: { variable: "update_mask", value: updateMaskBinding },
         },
       },
     ];
@@ -270,13 +281,13 @@ describe("validateDocument", () => {
         name: "create",
         label: "Create",
         method: "create",
-        binding: { transport: "graphql", operation: "createProduct", result_path: "createProduct", variables: {} },
+        binding: graphqlBinding("createProduct", "createProduct"),
       },
       {
         name: "update",
         label: "Update",
         method: "update",
-        binding: { transport: "graphql", operation: "updateProduct", result_path: "updateProduct", variables: {} },
+        binding: graphqlBinding("updateProduct", "updateProduct"),
         form: { fields: [{ field: "title", control: "text" }] },
       },
     ];
@@ -293,14 +304,14 @@ describe("validateDocument", () => {
         name: "open",
         label: "Open",
         method: "get",
-        binding: { transport: "graphql", operation: "product", result_path: "product", variables: {} },
+        binding: graphqlBinding("product", "product"),
         interaction: { optimistic_update: { mode: "remove_resource" } },
       },
       {
         name: "create",
         label: "Create",
         method: "create",
-        binding: { transport: "graphql", operation: "createProduct", result_path: "createProduct", variables: {} },
+        binding: graphqlBinding("createProduct", "createProduct"),
         form: {
           fields: [
             { field: "title", control: "text" },
@@ -317,14 +328,11 @@ describe("validateDocument", () => {
         label: "Update",
         method: "update",
         binding: {
-          transport: "graphql",
-          operation: "updateProduct",
-          result_path: "updateProduct",
-          variables: { update_mask: "$form.update_mask" },
+          ...graphqlBinding("updateProduct", "updateProduct", { update_mask: updateMaskBinding }),
         },
         form: {
           fields: [{ field: "title", control: "text" }],
-          update_mask: { variable: "update_mask", value_path: "$form.update_mask" },
+          update_mask: { variable: "update_mask", value: updateMaskBinding },
         },
         interaction: {
           submit: { presentation: "modal" },
@@ -336,7 +344,7 @@ describe("validateDocument", () => {
         name: "delete",
         label: "Delete",
         method: "delete",
-        binding: { transport: "graphql", operation: "deleteProduct", result_path: "deleteProduct", variables: {} },
+        binding: graphqlBinding("deleteProduct", "deleteProduct"),
         interaction: {
           confirmation: { title: "", message: "", destructive: false },
           optimistic_update: { mode: "patch_resource" },
@@ -346,10 +354,10 @@ describe("validateDocument", () => {
         name: "archive",
         label: "Archive",
         method: "custom",
-        binding: { transport: "graphql", operation: "archiveProduct", result_path: "archiveProduct", variables: {} },
+        binding: graphqlBinding("archiveProduct", "archiveProduct"),
       },
     ];
-    (doc.routes[0]!.components[1]!.props as { table: { bulk_actions: string[] } }).table.bulk_actions = ["delete"];
+    (doc.routes[0]!.components[1]! as { table: { bulk_actions: string[] } }).table.bulk_actions = ["delete"];
 
     expect(validateDocument(doc).map((d) => d.code)).toEqual(
       expect.arrayContaining([
@@ -382,7 +390,7 @@ describe("validateDocument", () => {
         name: "open",
         label: "Open",
         method: "get",
-        binding: { transport: "graphql", operation: "product", result_path: "product", variables: {} },
+        binding: graphqlBinding("product", "product"),
       },
     ];
 

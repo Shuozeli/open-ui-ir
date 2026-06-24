@@ -45,15 +45,21 @@ server schema / YAML / JSON / GraphQL
 | `@open-ui-ir/tui` | compiler target that emits a terminal UI model |
 | `@open-ui-ir/cli` | command-line validation and target compilation |
 
+The canonical wire shape is also available as JSON Schema at
+[`schemas/open-ui-ir.v1.schema.json`](schemas/open-ui-ir.v1.schema.json).
+
 Visualization support currently includes target-neutral `chart` intent with
-`line`, `bar`, `area`, `pie`, `heatmap`, and `scatter` chart kinds. The React
-AntD target lowers these to `@ant-design/charts` components.
+`line`, `bar`, `area`, `pie`, `heatmap`, `scatter`, `radar`, `rose`,
+`radial_bar`, `funnel`, `treemap`, `word_cloud`, `gauge`, and `liquid` chart
+kinds. The React AntD target lowers these to `@ant-design/charts` components.
 
 See [docs/general-framework-design.md](docs/general-framework-design.md) for the
 broader compiler architecture: semantic IR, presentation IR, interaction IR,
 data-binding IR, and target lowering for multiple frameworks and UI libraries.
 See [docs/feature-contract.md](docs/feature-contract.md) for the current stable
 feature surface, validator guarantees, and target manifest compatibility checks.
+See [docs/ir-format.md](docs/ir-format.md) for the supported document, binding,
+field, component, filter, action, metric, and chart formats.
 
 ## Status
 
@@ -98,3 +104,21 @@ and executes the GraphQL bindings declared by the Spike. The demo demonstrates
 action modals, row selection, detail navigation, dashboard charts, locale
 switching, and the distinction between translated UI chrome, translated enum
 labels, and untranslated user-entered data.
+
+Demo commands:
+
+```bash
+export TAILSCALE_IP=$(tailscale ip -4)
+
+cd demo-backend
+BIND_ADDR=$TAILSCALE_IP:8794 cargo run --release
+
+cd ..
+pnpm --filter @open-ui-ir/demo-ui dev
+```
+
+`demo-ui` is a workspace package and can also be built with:
+
+```bash
+pnpm --filter @open-ui-ir/demo-ui build
+```

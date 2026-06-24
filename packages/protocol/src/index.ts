@@ -122,11 +122,28 @@ export interface FilterOption {
   value: string;
 }
 
+export type BindingValue =
+  | { kind: "literal"; value: unknown }
+  | { kind: "route"; path: string }
+  | { kind: "resource"; path: string }
+  | { kind: "form"; path?: string }
+  | { kind: "page"; path: "page_size" | "page_token" }
+  | { kind: "filters"; path?: string };
+
+export interface ResultPath {
+  path: string;
+}
+
+export interface DataRef {
+  binding: string;
+  path?: string;
+}
+
 export interface QueryBinding {
   transport: "graphql" | "rest";
   operation: string;
-  result_path: string;
-  variables: Record<string, unknown>;
+  result: ResultPath;
+  variables: Record<string, BindingValue>;
 }
 
 export interface UiRouteSpec {
@@ -135,7 +152,7 @@ export interface UiRouteSpec {
   layout: LayoutKind;
   navigation?: NavigationSpec;
   data_bindings: DataBinding[];
-  components: ComponentSpec[];
+  components: RouteComponentSpec[];
 }
 
 export interface NavigationSpec {
@@ -150,20 +167,47 @@ export interface DataBinding {
 
 export interface ComponentSpec {
   id: string;
-  kind: ComponentKind | string;
-  data_ref?: string;
-  props: ComponentProps;
+  kind: ComponentKind;
+  data?: DataRef;
 }
 
-export type ComponentProps =
-  | Record<string, unknown>
-  | ChartComponentProps
-  | MetricRowProps
-  | TableComponentProps
-  | DetailHeaderComponentProps;
+export type RouteComponentSpec =
+  | FilterBarComponentSpec
+  | TableComponentSpec
+  | DetailHeaderComponentSpec
+  | MetricRowComponentSpec
+  | ChartComponentSpec
+  | ChartGridComponentSpec;
 
-export interface TableComponentProps {
+export interface FilterBarComponentSpec extends ComponentSpec {
+  kind: "filter_bar";
+  collection: string;
+}
+
+export interface TableComponentSpec extends ComponentSpec {
+  kind: "table";
   table: TableSpec;
+}
+
+export interface DetailHeaderComponentSpec extends ComponentSpec {
+  kind: "detail_header";
+  detail: DetailSpec;
+}
+
+export interface MetricRowComponentSpec extends ComponentSpec {
+  kind: "metric_row";
+  metrics: MetricSpec[];
+}
+
+export interface ChartComponentSpec extends ComponentSpec {
+  kind: "chart";
+  chart: ChartSpec;
+}
+
+export interface ChartGridComponentSpec extends ComponentSpec {
+  kind: "chart_grid";
+  columns?: number;
+  chart_refs: string[];
 }
 
 export interface TableSpec {
@@ -223,19 +267,15 @@ export interface RelatedResourceSpec {
   id: string;
   label: string;
   collection: string;
-  data_ref: string;
+  data: DataRef;
   table: TableSpec;
 }
 
 export interface TimelineSpec {
-  data_ref: string;
+  data: DataRef;
   title_field: string;
   time_field: string;
   description_field?: string;
-}
-
-export interface MetricRowProps {
-  metrics: MetricSpec[];
 }
 
 export interface MetricSpec {
@@ -243,10 +283,6 @@ export interface MetricSpec {
   label: string;
   value_path: string;
   format?: "number" | "percent" | "currency" | "duration" | "datetime";
-}
-
-export interface ChartComponentProps {
-  chart: ChartSpec;
 }
 
 export interface ChartSpec {
@@ -322,7 +358,7 @@ export interface FormFieldSpec {
 
 export interface UpdateMaskSpec {
   variable: string;
-  value_path: "$form.update_mask";
+  value: Extract<BindingValue, { kind: "form" }>;
 }
 
 export function resourceName(collection: string, id: string): string {

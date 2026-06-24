@@ -222,7 +222,12 @@ Example runtime binding:
   "id": "incident_events.list",
   "transport": "graphql",
   "operation": "query IncidentEvents($pageSize: Int, $pageToken: String, $filter: String) { incidentEvents(pageSize: $pageSize, pageToken: $pageToken, filter: $filter) { incidentEvents { name title severity status createdAt } nextPageToken } }",
-  "result_path": "incidentEvents.incidentEvents",
+  "result": { "path": "incidentEvents.incidentEvents" },
+  "variables": {
+    "pageSize": { "kind": "page", "path": "page_size" },
+    "pageToken": { "kind": "page", "path": "page_token" },
+    "filter": { "kind": "filters" }
+  },
   "pagination": {
     "next_page_token_path": "incidentEvents.nextPageToken"
   }
@@ -507,7 +512,7 @@ The validator should fail documents that:
 - define clickable UI without an action or route target
 - bind a component to a missing data reference
 - reference filters that cannot be represented in the data binding
-- use target-specific props in semantic IR
+- use undeclared target-specific component fields in semantic IR
 
 ## Roadmap
 

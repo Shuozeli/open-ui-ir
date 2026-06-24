@@ -25,7 +25,6 @@ import {
   theme,
 } from "antd";
 import {
-  CheckCircleOutlined,
   DashboardOutlined,
   DeleteOutlined,
   EditOutlined,
@@ -334,17 +333,21 @@ function RouteRenderer(props) {
   return <DashboardPage {...props} />;
 }
 
-function ListPage({ document, rows, loadingRows, filters, setFilters, selectedIncident, setSelectedIncident, setSelectedRoute, runAction, t, locale, activePanel, isMobile }) {
-  const collection = document.collections[0];
+function ListPage({ route, document, rows, loadingRows, filters, setFilters, selectedIncident, setSelectedIncident, setSelectedRoute, runAction, t, locale, activePanel, isMobile }) {
+  const filterComponent = route.components.find((component) => component.kind === "filter_bar");
+  const tableComponent = route.components.find((component) => component.kind === "table");
+  const collection = findCollection(document, tableComponent?.table?.collection ?? filterComponent?.collection) ?? document.collections[0];
+  const table = tableComponent?.table;
+  const rowActions = actionList(collection, table?.row_actions);
   return (
     <Space direction="vertical" size={16} className="pageStack">
       <FilterBar collection={collection} filters={filters} setFilters={setFilters} t={t} activePanel={activePanel} />
       <Card
-        {...debugPanelProps("table", activePanel)}
-        title={t("Incident Events")}
+        {...debugPanelProps(tableComponent?.id ?? "table", activePanel)}
+        title={t(route.title)}
         extra={
           <Space className="actionButtons" wrap>
-            {collection.actions.map((action) => (
+            {rowActions.map((action) => (
               <ActionButton key={action.name} action={action} runAction={runAction} t={t} />
             ))}
           </Space>
@@ -354,6 +357,8 @@ function ListPage({ document, rows, loadingRows, filters, setFilters, selectedIn
           <MobileIncidentList
             rows={rows}
             loading={loadingRows}
+            table={table}
+            collection={collection}
             selectedIncident={selectedIncident}
             setSelectedIncident={setSelectedIncident}
             setSelectedRoute={setSelectedRoute}
@@ -381,27 +386,16 @@ function ListPage({ document, rows, loadingRows, filters, setFilters, selectedIn
             })}
             rowClassName={(record) => (record.name === selectedIncident?.name ? "selectedRow" : "")}
             columns={[
-              {
-                title: t("Title"),
-                dataIndex: "title",
-                width: 320,
-                render: (value, record) => (
-                  <Typography.Link
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      setSelectedIncident(record);
-                      setSelectedRoute("/incidents/:name");
-                    }}
-                  >
-                    {value}
-                  </Typography.Link>
-                ),
-              },
-              { title: t("Service"), dataIndex: "service", render: (value) => renderService(value, t) },
-              { title: t("Severity"), dataIndex: "severity", render: (value) => renderSeverity(value, t) },
-              { title: t("Ack"), dataIndex: "acknowledged", render: (value) => (value ? <Badge status="success" text={t("Yes")} /> : <Badge status="warning" text={t("No")} />) },
-              { title: t("Duration"), dataIndex: "duration_ms", render: (value) => formatDuration(value, locale) },
-              { title: t("Created"), dataIndex: "created_at", render: (value) => formatDate(value, locale) },
+              ...columnsFromTable({
+                table,
+                collection,
+                t,
+                locale,
+                onNavigate: (record) => {
+                  setSelectedIncident(record);
+                  setSelectedRoute(table?.row_navigation?.includes(":name") ? table.row_navigation : "/incidents/:name");
+                },
+              }),
             ]}
           />
         )}
@@ -410,7 +404,11 @@ function ListPage({ document, rows, loadingRows, filters, setFilters, selectedIn
   );
 }
 
-function MobileIncidentList({ rows, loading, selectedIncident, setSelectedIncident, setSelectedRoute, t, locale }) {
+function MobileIncidentList({ rows, loading, table, collection, selectedIncident, setSelectedIncident, setSelectedRoute, t, locale }) {
+  const visibleColumns = (table?.columns ?? []).filter((column) => column.visible !== false);
+  const [primaryColumn, secondaryColumn, ...metadataColumns] = visibleColumns;
+  const metadata = metadataColumns.slice(0, 3);
+  const openRoute = table?.row_navigation ?? "/incidents/:name";
   if (loading) {
     return <div className="mobileListState">{t("Loading demo UI...")}</div>;
   }
@@ -420,23 +418,31 @@ function MobileIncidentList({ rows, loading, selectedIncident, setSelectedIncide
   return (
     <div className="mobileList">
       {rows.map((row) => (
-        <button
+        <div
           key={row.name}
-          type="button"
+          role="button"
+          tabIndex={0}
           className={`mobileListItem ${row.name === selectedIncident?.name ? "mobileListItemSelected" : ""}`}
           onClick={() => setSelectedIncident(row)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" || event.key === " ") {
+              event.preventDefault();
+              setSelectedIncident(row);
+            }
+          }}
         >
           <span className="mobileListHeader">
-            <Typography.Text strong>{row.title}</Typography.Text>
-            {renderSeverity(row.severity, t)}
+            <Typography.Text strong>
+              {renderFieldValue(readPath(row, primaryColumn?.field ?? "name"), fieldSpec(collection, primaryColumn?.field), t, locale)}
+            </Typography.Text>
+            {secondaryColumn ? renderFieldValue(readPath(row, secondaryColumn.field), fieldSpec(collection, secondaryColumn.field), t, locale) : null}
           </span>
           <span className="mobileListMeta">
-            {renderService(row.service, t)}
-            <Badge status={row.acknowledged ? "success" : "warning"} text={row.acknowledged ? t("Yes") : t("No")} />
-          </span>
-          <span className="mobileListFacts">
-            <span>{formatDate(row.created_at, locale)}</span>
-            <span>{formatDuration(row.duration_ms, locale)}</span>
+            {metadata.map((column) => (
+              <span key={column.id}>
+                {renderFieldValue(readPath(row, column.field), fieldSpec(collection, column.field), t, locale)}
+              </span>
+            ))}
           </span>
           <span className="mobileListFooter">
             <Typography.Text type="secondary">{row.name}</Typography.Text>
@@ -446,13 +452,13 @@ function MobileIncidentList({ rows, loading, selectedIncident, setSelectedIncide
               onClick={(event) => {
                 event.stopPropagation();
                 setSelectedIncident(row);
-                setSelectedRoute("/incidents/:name");
+                setSelectedRoute(openRoute);
               }}
             >
               {t("Open")}
             </Button>
           </span>
-        </button>
+        </div>
       ))}
     </div>
   );
@@ -487,37 +493,42 @@ function FilterBar({ collection, filters, setFilters, t, activePanel }) {
   );
 }
 
-function DetailPage({ selectedIncident, runAction, document, t, locale, activePanel, isMobile }) {
+function DetailPage({ route, selectedIncident, runAction, document, t, locale, activePanel, isMobile }) {
   if (!selectedIncident) {
     return <Alert type="info" showIcon message={t("No incident selected")} />;
   }
-  const actions = document.collections[0].actions;
-  const acknowledge = actions.find((action) => action.name === "acknowledge");
-  const update = actions.find((action) => action.name === "update");
+  const detailComponent = route.components.find((component) => component.kind === "detail_header");
+  const detail = detailComponent?.detail;
+  const collection = findCollection(document, detail?.collection) ?? document.collections[0];
+  const actions = actionList(collection, detail?.actions);
   return (
     <Space direction="vertical" size={16} className="pageStack">
-      <Card {...debugPanelProps("header", activePanel)}>
+      <Card {...debugPanelProps(detailComponent?.id ?? "header", activePanel)}>
         <Flex justify="space-between" align="start" gap={16} wrap>
           <div>
-            <Typography.Title level={3}>{selectedIncident.title}</Typography.Title>
-            <Space>{renderService(selectedIncident.service, t)}{renderSeverity(selectedIncident.severity, t)}</Space>
+            <Typography.Title level={3}>{String(readPath(selectedIncident, detail?.title_field ?? "title") ?? selectedIncident.name)}</Typography.Title>
+            <Space>
+              {detail?.subtitle_field ? renderFieldValue(readPath(selectedIncident, detail.subtitle_field), fieldSpec(collection, detail.subtitle_field), t, locale) : null}
+              {detail?.status_field ? renderFieldValue(readPath(selectedIncident, detail.status_field), fieldSpec(collection, detail.status_field), t, locale) : null}
+            </Space>
           </div>
           <Space className="detailActions" wrap>
-            <Button icon={<CheckCircleOutlined />} onClick={() => runAction(acknowledge)}>{t("Acknowledge")}</Button>
-            <Button icon={<EditOutlined />} onClick={() => runAction(update)}>{t("Edit")}</Button>
+            {actions.filter((action) => action.method !== "get").map((action) => (
+              <ActionButton key={action.name} action={action} runAction={runAction} t={t} />
+            ))}
           </Space>
         </Flex>
       </Card>
       <Card {...debugPanelProps("payload", activePanel)} title={t("Resource Detail")}>
         {isMobile ? (
-          <MobileDetailFields selectedIncident={selectedIncident} t={t} locale={locale} />
+          <MobileDetailFields selectedIncident={selectedIncident} detail={detail} collection={collection} t={t} locale={locale} />
         ) : (
           <Descriptions bordered column={2} size="middle">
-            <Descriptions.Item label={t("Name")}>{selectedIncident.name}</Descriptions.Item>
-            <Descriptions.Item label={t("Acknowledged")}>{selectedIncident.acknowledged ? t("Yes") : t("No")}</Descriptions.Item>
-            <Descriptions.Item label={t("Created")}>{formatDate(selectedIncident.created_at, locale)}</Descriptions.Item>
-            <Descriptions.Item label={t("External URL")}><Typography.Link href={selectedIncident.external_url}>{selectedIncident.external_url}</Typography.Link></Descriptions.Item>
-            <Descriptions.Item label={t("Payload")} span={2}><pre className="jsonBlock">{JSON.stringify(selectedIncident.payload, null, 2)}</pre></Descriptions.Item>
+            {detailFields(detail, collection).map((field) => (
+              <Descriptions.Item key={field.name} label={t(field.label ?? field.name)} span={field.value_type === "json" ? 2 : 1}>
+                {renderFieldValue(readPath(selectedIncident, field.name), field, t, locale)}
+              </Descriptions.Item>
+            ))}
           </Descriptions>
         )}
       </Card>
@@ -525,25 +536,16 @@ function DetailPage({ selectedIncident, runAction, document, t, locale, activePa
   );
 }
 
-function MobileDetailFields({ selectedIncident, t, locale }) {
-  const fields = [
-    [t("Name"), selectedIncident.name],
-    [t("Acknowledged"), selectedIncident.acknowledged ? t("Yes") : t("No")],
-    [t("Created"), formatDate(selectedIncident.created_at, locale)],
-    [t("External URL"), <Typography.Link href={selectedIncident.external_url}>{selectedIncident.external_url}</Typography.Link>],
-  ];
+function MobileDetailFields({ selectedIncident, detail, collection, t, locale }) {
+  const fields = detailFields(detail, collection);
   return (
     <div className="mobileDetailStack">
-      {fields.map(([label, value]) => (
-        <div key={label} className="mobileDetailField">
-          <Typography.Text type="secondary">{label}</Typography.Text>
-          <div>{value}</div>
+      {fields.map((field) => (
+        <div key={field.name} className="mobileDetailField">
+          <Typography.Text type="secondary">{t(field.label ?? field.name)}</Typography.Text>
+          <div>{renderFieldValue(readPath(selectedIncident, field.name), field, t, locale)}</div>
         </div>
       ))}
-      <div className="mobileDetailField">
-        <Typography.Text type="secondary">{t("Payload")}</Typography.Text>
-        <pre className="jsonBlock">{JSON.stringify(selectedIncident.payload, null, 2)}</pre>
-      </div>
     </div>
   );
 }
@@ -581,47 +583,49 @@ function ActionModal({ action, draft, setDraft, selectedIncident, onCancel, onCo
       okButtonProps={{ disabled: action.method === "create" && !draft.title?.trim() }}
     >
       <Space direction="vertical" size={12} className="modalForm">
-        <label>
-          <Typography.Text>{t("Title")}</Typography.Text>
-          <Input value={draft.title ?? ""} onChange={(event) => setDraft({ ...draft, title: event.target.value })} />
-        </label>
-        <label>
-          <Typography.Text>{t("Service")}</Typography.Text>
-          <Select
-            value={draft.service}
-            options={[
-              { value: "api", label: t("API") },
-              { value: "batch-worker", label: t("Batch Worker") },
-              { value: "worker", label: t("Worker") },
-            ]}
-            onChange={(service) => setDraft({ ...draft, service })}
-          />
-        </label>
-        <label>
-          <Typography.Text>{t("Severity")}</Typography.Text>
-          <Select
-            value={draft.severity}
-            options={[
-              { value: "critical", label: t("Critical") },
-              { value: "warning", label: t("Warning") },
-              { value: "info", label: t("Info") },
-            ]}
-            onChange={(severity) => setDraft({ ...draft, severity })}
-          />
-        </label>
-        <Space>
-          <Typography.Text>{t("Acknowledged")}</Typography.Text>
-          <Switch checked={Boolean(draft.acknowledged)} onChange={(acknowledged) => setDraft({ ...draft, acknowledged })} />
-        </Space>
+        {(action.form?.fields ?? []).map((field) => (
+          <FormControl key={field.field} field={field} draft={draft} setDraft={setDraft} t={t} />
+        ))}
       </Space>
     </Modal>
+  );
+}
+
+function FormControl({ field, draft, setDraft, t }) {
+  const value = draft[field.field];
+  if (field.control === "checkbox") {
+    return (
+      <Space>
+        <Typography.Text>{t(field.label ?? field.field)}</Typography.Text>
+        <Switch checked={Boolean(value)} onChange={(next) => setDraft({ ...draft, [field.field]: next })} />
+      </Space>
+    );
+  }
+  if (field.control === "select" || field.control === "multi_select") {
+    return (
+      <label>
+        <Typography.Text>{t(field.label ?? field.field)}</Typography.Text>
+        <Select
+          mode={field.control === "multi_select" ? "multiple" : undefined}
+          value={value}
+          options={translateOptions(field.options, t)}
+          onChange={(next) => setDraft({ ...draft, [field.field]: next })}
+        />
+      </label>
+    );
+  }
+  return (
+    <label>
+      <Typography.Text>{t(field.label ?? field.field)}</Typography.Text>
+      <Input value={value ?? ""} onChange={(event) => setDraft({ ...draft, [field.field]: event.target.value })} />
+    </label>
   );
 }
 
 function DashboardPage({ route, t, seriesRows, dashboardStats, activePanel, isMobile }) {
   const metricComponent = route.components.find((component) => component.kind === "metric_row");
   const chartComponents = route.components.filter((component) => component.kind === "chart");
-  const metrics = metricComponent?.props?.metrics ?? [];
+  const metrics = metricComponent?.metrics ?? [];
   return (
     <Space direction="vertical" size={16} className="pageStack">
       <div {...debugPanelProps("kpis", activePanel, "metricRow")}>
@@ -638,8 +642,8 @@ function DashboardPage({ route, t, seriesRows, dashboardStats, activePanel, isMo
       </div>
       <div className="chartGrid">
         {chartComponents.map((component) => (
-          <Card key={component.id} {...debugPanelProps(component.id, activePanel)} title={t(component.props.chart.title)}>
-            <ChartRenderer chart={component.props.chart} rows={seriesRows} dashboardStats={dashboardStats} isMobile={isMobile} />
+          <Card key={component.id} {...debugPanelProps(component.id, activePanel)} title={t(component.chart.title)}>
+            <ChartRenderer chart={component.chart} rows={seriesRows} dashboardStats={dashboardStats} isMobile={isMobile} />
           </Card>
         ))}
       </div>
@@ -742,6 +746,80 @@ function renderSeverity(value, t) {
 
 function renderService(value, t) {
   return <Tag color="geekblue">{t(toTitle(value))}</Tag>;
+}
+
+function columnsFromTable({ table, collection, t, locale, onNavigate }) {
+  return (table?.columns ?? []).filter((column) => column.visible !== false).map((column) => {
+    const field = fieldSpec(collection, column.field);
+    return {
+      title: t(column.label ?? field?.label ?? column.field),
+      dataIndex: column.field,
+      width: column.width,
+      align: antTableAlign(column.align),
+      sorter: column.sortable ? true : undefined,
+      render: (value, record) => {
+        const rendered = renderFieldValue(value, field, t, locale);
+        if (table?.row_navigation && column.field === (table.columns[0]?.field ?? column.field)) {
+          return (
+            <Typography.Link
+              onClick={(event) => {
+                event.stopPropagation();
+                onNavigate(record);
+              }}
+            >
+              {rendered}
+            </Typography.Link>
+          );
+        }
+        return rendered;
+      },
+    };
+  });
+}
+
+function antTableAlign(align) {
+  if (align === "start") return "left";
+  if (align === "end") return "right";
+  return align;
+}
+
+function findCollection(document, name) {
+  return (document?.collections ?? []).find((collection) => collection.name === name);
+}
+
+function fieldSpec(collection, name) {
+  return (collection?.fields ?? []).find((field) => field.name === name);
+}
+
+function actionList(collection, names) {
+  if (!names?.length) return collection?.actions ?? [];
+  const actions = new Map((collection?.actions ?? []).map((action) => [action.name, action]));
+  return names.map((name) => actions.get(name)).filter(Boolean);
+}
+
+function detailFields(detail, collection) {
+  const names = detail?.sections?.flatMap((section) => section.fields) ?? (collection?.fields ?? []).map((field) => field.name);
+  const seen = new Set();
+  return names.flatMap((name) => {
+    if (seen.has(name)) return [];
+    seen.add(name);
+    const field = fieldSpec(collection, name);
+    return field ? [field] : [];
+  });
+}
+
+function renderFieldValue(value, field, t, locale) {
+  if (value === undefined || value === null) return null;
+  if (field?.value_type === "datetime" || field?.renderer === "datetime") return formatDate(value, locale);
+  if (field?.renderer === "number") return typeof value === "number" && field.name.endsWith("_ms") ? formatDuration(value, locale) : value;
+  if (field?.renderer === "badge" && typeof value === "boolean") {
+    return value ? <Badge status="success" text={t("Yes")} /> : <Badge status="warning" text={t("No")} />;
+  }
+  if (field?.renderer === "badge" && field.name === "severity") return renderSeverity(value, t);
+  if (field?.renderer === "badge") return renderService(value, t);
+  if (field?.renderer === "external_link") return <Typography.Link href={String(value)}>{String(value)}</Typography.Link>;
+  if (field?.renderer === "json" || field?.value_type === "json") return <pre className="jsonBlock">{JSON.stringify(value, null, 2)}</pre>;
+  return String(value);
 }
 
 function filterRows(rows, filters) {
@@ -1070,12 +1148,12 @@ function summarizeRoutes(document) {
       name: binding.name,
       transport: binding.query?.transport,
       operation: binding.query?.operation,
-      result_path: binding.query?.result_path,
+      result_path: binding.query?.result?.path,
     })),
     panels: (route.components ?? []).map((component) => ({
       id: component.id,
       kind: component.kind,
-      data_ref: component.data_ref ?? null,
+      data_ref: summarizeDataRef(component.data),
     })),
   }));
 }
@@ -1091,7 +1169,7 @@ function summarizeActions(document, collectionName) {
         method: action.method,
         transport: action.binding?.transport,
         operation: action.binding?.operation,
-        result_path: action.binding?.result_path,
+        result_path: action.binding?.result?.path,
       })),
     );
 }
@@ -1102,7 +1180,7 @@ function summarizePanels(document, route) {
     route: selectedRoute.route,
     id: component.id,
     kind: component.kind,
-    data_ref: component.data_ref ?? null,
+    data_ref: summarizeDataRef(component.data),
   }));
 }
 
@@ -1136,13 +1214,18 @@ function summarizeBinding(name, binding, { resultShape, rowCount, nextPageTokenP
     name,
     transport: binding.transport,
     operation: binding.operation,
-    result_path: binding.result_path,
+    result_path: binding.result?.path,
     variables_shape: Object.keys(binding.variables ?? {}),
     result_shape: resultShape,
     row_count: rowCount,
     next_page_token_present: nextPageTokenPresent,
     last_loaded_at: new Date().toISOString(),
   };
+}
+
+function summarizeDataRef(data) {
+  if (!data) return null;
+  return data.path ? `${data.binding}.${data.path}` : data.binding;
 }
 
 function shapeOf(value) {

@@ -1,0 +1,563 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://shuozeli.github.io/open-ui-ir/schemas/open-ui-ir.v1.schema.json",
+  "title": "Open UI IR v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["protocol_version", "app_name", "display_name", "capabilities", "collections", "routes"],
+  "properties": {
+    "protocol_version": { "const": "open-ui-ir.v1" },
+    "app_name": { "type": "string", "minLength": 1 },
+    "display_name": { "type": "string", "minLength": 1 },
+    "default_locale": { "type": "string", "minLength": 1 },
+    "locales": { "type": "array", "items": { "$ref": "#/$defs/locale" } },
+    "messages": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": { "type": "string" }
+      }
+    },
+    "capabilities": { "$ref": "#/$defs/capabilities" },
+    "collections": { "type": "array", "items": { "$ref": "#/$defs/collection" } },
+    "routes": { "type": "array", "items": { "$ref": "#/$defs/route" } }
+  },
+  "$defs": {
+    "locale": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["locale", "label"],
+      "properties": {
+        "locale": { "type": "string", "minLength": 1 },
+        "label": { "type": "string", "minLength": 1 }
+      }
+    },
+    "capabilities": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["layouts", "component_kinds", "field_renderers", "filter_kinds", "action_methods"],
+      "properties": {
+        "layouts": { "type": "array", "items": { "$ref": "#/$defs/layoutKind" } },
+        "component_kinds": { "type": "array", "items": { "$ref": "#/$defs/componentKind" } },
+        "field_renderers": { "type": "array", "items": { "$ref": "#/$defs/fieldRenderer" } },
+        "filter_kinds": { "type": "array", "items": { "$ref": "#/$defs/filterKind" } },
+        "action_methods": { "type": "array", "items": { "$ref": "#/$defs/actionMethod" } }
+      }
+    },
+    "layoutKind": { "enum": ["crud_list", "detail_page", "dashboard"] },
+    "componentKind": { "enum": ["filter_bar", "table", "detail_header", "metric_row", "chart", "chart_grid"] },
+    "filterKind": { "enum": ["text", "select", "multi_select", "date_range", "boolean"] },
+    "actionMethod": { "enum": ["get", "create", "update", "delete", "custom"] },
+    "chartKind": {
+      "enum": ["line", "bar", "area", "pie", "heatmap", "scatter", "radar", "rose", "radial_bar", "funnel", "treemap", "word_cloud", "gauge", "liquid"]
+    },
+    "fieldRenderer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "description"],
+      "properties": {
+        "kind": { "type": "string", "minLength": 1 },
+        "description": { "type": "string" }
+      }
+    },
+    "collection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "resource_type", "plural_field", "list", "fields", "filters", "actions", "pagination"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "resource_type": { "type": "string", "minLength": 1 },
+        "plural_field": { "type": "string", "minLength": 1 },
+        "list": { "$ref": "#/$defs/queryBinding" },
+        "get": { "$ref": "#/$defs/queryBinding" },
+        "fields": { "type": "array", "items": { "$ref": "#/$defs/resourceField" } },
+        "filters": { "type": "array", "items": { "$ref": "#/$defs/filter" } },
+        "actions": { "type": "array", "items": { "$ref": "#/$defs/action" } },
+        "pagination": { "$ref": "#/$defs/pagination" }
+      }
+    },
+    "resourceField": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "value_type", "renderer", "required", "output_only"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "value_type": { "enum": ["string", "number", "boolean", "datetime", "json"] },
+        "renderer": { "type": "string", "minLength": 1 },
+        "required": { "type": "boolean" },
+        "output_only": { "type": "boolean" }
+      }
+    },
+    "filter": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "label", "kind", "cel_field"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "label": { "type": "string", "minLength": 1 },
+        "kind": { "$ref": "#/$defs/filterKind" },
+        "cel_field": { "type": "string", "minLength": 1 },
+        "options": { "type": "array", "items": { "$ref": "#/$defs/option" } }
+      }
+    },
+    "option": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["label", "value"],
+      "properties": {
+        "label": { "type": "string" },
+        "value": { "type": "string" }
+      }
+    },
+    "pagination": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "page_size_param", "page_token_param", "next_page_token_path", "order_by", "unique_key_fields"],
+      "properties": {
+        "kind": { "const": "keyset" },
+        "page_size_param": { "const": "page_size" },
+        "page_token_param": { "const": "page_token" },
+        "next_page_token_path": { "type": "string", "minLength": 1 },
+        "order_by": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/sortKey" } },
+        "unique_key_fields": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } }
+      }
+    },
+    "sortKey": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["field", "direction"],
+      "properties": {
+        "field": { "type": "string", "minLength": 1 },
+        "direction": { "enum": ["asc", "desc"] }
+      }
+    },
+    "queryBinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["transport", "operation", "result", "variables"],
+      "properties": {
+        "transport": { "enum": ["graphql", "rest"] },
+        "operation": { "type": "string", "minLength": 1 },
+        "result": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["path"],
+          "properties": { "path": { "type": "string", "minLength": 1 } }
+        },
+        "variables": {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/$defs/bindingValue" }
+        }
+      }
+    },
+    "bindingValue": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "value"],
+          "properties": { "kind": { "const": "literal" }, "value": true }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "path"],
+          "properties": { "kind": { "enum": ["route", "resource"] }, "path": { "type": "string", "minLength": 1 } }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind"],
+          "properties": { "kind": { "enum": ["form", "filters"] }, "path": { "type": "string", "minLength": 1 } }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "path"],
+          "properties": { "kind": { "const": "page" }, "path": { "enum": ["page_size", "page_token"] } }
+        }
+      ]
+    },
+    "action": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "label", "method", "binding"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "label": { "type": "string", "minLength": 1 },
+        "method": { "$ref": "#/$defs/actionMethod" },
+        "binding": { "$ref": "#/$defs/queryBinding" },
+        "form": { "$ref": "#/$defs/actionForm" },
+        "interaction": { "$ref": "#/$defs/actionInteraction" }
+      }
+    },
+    "actionForm": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["fields"],
+      "properties": {
+        "fields": { "type": "array", "items": { "$ref": "#/$defs/formField" } },
+        "update_mask": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["variable", "value"],
+          "properties": {
+            "variable": { "type": "string", "minLength": 1 },
+            "value": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["kind", "path"],
+              "properties": {
+                "kind": { "const": "form" },
+                "path": { "const": "update_mask" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "formField": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["field", "control"],
+      "properties": {
+        "field": { "type": "string", "minLength": 1 },
+        "label": { "type": "string" },
+        "control": { "enum": ["text", "textarea", "number", "checkbox", "select", "multi_select", "date_time", "json"] },
+        "required": { "type": "boolean" },
+        "options": { "type": "array", "items": { "$ref": "#/$defs/option" } }
+      }
+    },
+    "actionInteraction": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "confirmation": { "$ref": "#/$defs/confirmation" },
+        "submit": { "$ref": "#/$defs/submit" },
+        "outcome": { "$ref": "#/$defs/outcome" },
+        "optimistic_update": { "$ref": "#/$defs/optimisticUpdate" }
+      }
+    },
+    "confirmation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["title", "message"],
+      "properties": {
+        "title": { "type": "string" },
+        "message": { "type": "string" },
+        "confirm_label": { "type": "string" },
+        "cancel_label": { "type": "string" },
+        "destructive": { "type": "boolean" }
+      }
+    },
+    "submit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["presentation"],
+      "properties": {
+        "presentation": { "enum": ["inline", "modal", "confirm"] },
+        "pending_message": { "type": "string" },
+        "disable_while_pending": { "type": "boolean" }
+      }
+    },
+    "outcome": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "success_message": { "type": "string" },
+        "failure_message": { "type": "string" },
+        "refresh_bindings": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+      }
+    },
+    "optimisticUpdate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode"],
+      "properties": {
+        "mode": { "enum": ["none", "prepend_resource", "replace_resource", "patch_resource", "remove_resource"] }
+      }
+    },
+    "route": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["route", "title", "layout", "data_bindings", "components"],
+      "properties": {
+        "route": { "type": "string", "minLength": 1 },
+        "title": { "type": "string", "minLength": 1 },
+        "layout": { "$ref": "#/$defs/layoutKind" },
+        "navigation": { "$ref": "#/$defs/navigation" },
+        "data_bindings": { "type": "array", "items": { "$ref": "#/$defs/dataBinding" } },
+        "components": { "type": "array", "items": { "$ref": "#/$defs/component" } }
+      }
+    },
+    "navigation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["group", "order"],
+      "properties": {
+        "group": { "type": "string" },
+        "order": { "type": "number" }
+      }
+    },
+    "dataBinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "query"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "query": { "$ref": "#/$defs/queryBinding" }
+      }
+    },
+    "dataRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["binding"],
+      "properties": {
+        "binding": { "type": "string", "minLength": 1 },
+        "path": { "type": "string", "minLength": 1 }
+      }
+    },
+    "componentBase": {
+      "type": "object",
+      "required": ["id", "kind"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "kind": { "$ref": "#/$defs/componentKind" },
+        "data": { "$ref": "#/$defs/dataRef" }
+      }
+    },
+    "component": {
+      "oneOf": [
+        {
+          "allOf": [
+            { "$ref": "#/$defs/componentBase" },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["id", "kind", "collection"],
+              "properties": {
+                "id": true,
+                "kind": { "const": "filter_bar" },
+                "data": true,
+                "collection": { "type": "string", "minLength": 1 }
+              }
+            }
+          ]
+        },
+        {
+          "allOf": [
+            { "$ref": "#/$defs/componentBase" },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["id", "kind", "table"],
+              "properties": {
+                "id": true,
+                "kind": { "const": "table" },
+                "data": true,
+                "table": { "$ref": "#/$defs/table" }
+              }
+            }
+          ]
+        },
+        {
+          "allOf": [
+            { "$ref": "#/$defs/componentBase" },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["id", "kind", "detail"],
+              "properties": {
+                "id": true,
+                "kind": { "const": "detail_header" },
+                "data": true,
+                "detail": { "$ref": "#/$defs/detail" }
+              }
+            }
+          ]
+        },
+        {
+          "allOf": [
+            { "$ref": "#/$defs/componentBase" },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["id", "kind", "metrics"],
+              "properties": {
+                "id": true,
+                "kind": { "const": "metric_row" },
+                "data": true,
+                "metrics": { "type": "array", "items": { "$ref": "#/$defs/metric" } }
+              }
+            }
+          ]
+        },
+        {
+          "allOf": [
+            { "$ref": "#/$defs/componentBase" },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["id", "kind", "chart"],
+              "properties": {
+                "id": true,
+                "kind": { "const": "chart" },
+                "data": true,
+                "chart": { "$ref": "#/$defs/chart" }
+              }
+            }
+          ]
+        },
+        {
+          "allOf": [
+            { "$ref": "#/$defs/componentBase" },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["id", "kind", "chart_refs"],
+              "properties": {
+                "id": true,
+                "kind": { "const": "chart_grid" },
+                "data": true,
+                "columns": { "type": "number", "minimum": 1 },
+                "chart_refs": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "table": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["collection", "columns"],
+      "properties": {
+        "collection": { "type": "string", "minLength": 1 },
+        "columns": { "type": "array", "items": { "$ref": "#/$defs/tableColumn" } },
+        "selection": { "$ref": "#/$defs/tableSelection" },
+        "row_navigation": { "type": "string" },
+        "row_actions": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "bulk_actions": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+      }
+    },
+    "tableSelection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode"],
+      "properties": {
+        "mode": { "enum": ["none", "single", "multiple"] },
+        "required_for_bulk_actions": { "type": "boolean" }
+      }
+    },
+    "tableColumn": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "field"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "field": { "type": "string", "minLength": 1 },
+        "label": { "type": "string" },
+        "sortable": { "type": "boolean" },
+        "visible": { "type": "boolean" },
+        "width": { "type": "number" },
+        "align": { "enum": ["start", "center", "end"] }
+      }
+    },
+    "detail": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["collection", "title_field"],
+      "properties": {
+        "collection": { "type": "string", "minLength": 1 },
+        "title_field": { "type": "string", "minLength": 1 },
+        "subtitle_field": { "type": "string", "minLength": 1 },
+        "status_field": { "type": "string", "minLength": 1 },
+        "actions": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "sections": { "type": "array", "items": { "$ref": "#/$defs/detailSection" } },
+        "tabs": { "type": "array", "items": { "$ref": "#/$defs/detailTab" } },
+        "related": { "type": "array", "items": { "$ref": "#/$defs/relatedResource" } },
+        "timeline": { "$ref": "#/$defs/timeline" }
+      }
+    },
+    "detailSection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "label", "fields"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "label": { "type": "string" },
+        "fields": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+      }
+    },
+    "detailTab": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "label"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "label": { "type": "string" },
+        "sections": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "related": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+      }
+    },
+    "relatedResource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "label", "collection", "data", "table"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "label": { "type": "string" },
+        "collection": { "type": "string", "minLength": 1 },
+        "data": { "$ref": "#/$defs/dataRef" },
+        "table": { "$ref": "#/$defs/table" }
+      }
+    },
+    "timeline": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["data", "title_field", "time_field"],
+      "properties": {
+        "data": { "$ref": "#/$defs/dataRef" },
+        "title_field": { "type": "string", "minLength": 1 },
+        "time_field": { "type": "string", "minLength": 1 },
+        "description_field": { "type": "string", "minLength": 1 }
+      }
+    },
+    "metric": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "label", "value_path"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "label": { "type": "string" },
+        "value_path": { "type": "string", "minLength": 1 },
+        "format": { "enum": ["number", "percent", "currency", "duration", "datetime"] }
+      }
+    },
+    "chart": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "encoding"],
+      "properties": {
+        "kind": { "$ref": "#/$defs/chartKind" },
+        "title": { "type": "string" },
+        "encoding": { "$ref": "#/$defs/chartEncoding" },
+        "height": { "type": "number", "minimum": 1 },
+        "stack": { "type": "boolean" },
+        "smooth": { "type": "boolean" }
+      }
+    },
+    "chartEncoding": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "x": { "type": "string" },
+        "y": { "type": "string" },
+        "value": { "type": "string" },
+        "category": { "type": "string" },
+        "color": { "type": "string" },
+        "size": { "type": "string" }
+      }
+    }
+  }
+}

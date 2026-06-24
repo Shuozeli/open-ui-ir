@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
 import {
   decodeKeysetPageToken,
   encodeKeysetPageToken,
@@ -8,6 +9,17 @@ import {
 } from "./index.js";
 
 describe("protocol helpers", () => {
+  it("ships a machine-readable JSON schema for the v1 wire format", () => {
+    const schema = JSON.parse(readFileSync(new URL("../../../schemas/open-ui-ir.v1.schema.json", import.meta.url), "utf8")) as {
+      $id?: string;
+      $defs?: { component?: { oneOf?: unknown[] }; bindingValue?: { oneOf?: unknown[] } };
+    };
+
+    expect(schema.$id).toContain("open-ui-ir.v1.schema.json");
+    expect(schema.$defs?.component?.oneOf?.length).toBe(6);
+    expect(schema.$defs?.bindingValue?.oneOf?.length).toBe(4);
+  });
+
   it("builds AIP resource names", () => {
     expect(resourceName("/enrichmentContents/", "/abc")).toBe("enrichmentContents/abc");
   });

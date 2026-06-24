@@ -12,7 +12,12 @@ const examplesDir = new URL("../../../examples", import.meta.url);
 describe("examples", () => {
   for (const file of readdirSync(examplesDir).filter((name) => name.endsWith(".ui.json"))) {
     it(`${file} validates and compiles to all current targets`, () => {
-      const document = JSON.parse(readFileSync(join(examplesDir.pathname, file), "utf8")) as OpenUiDocument;
+      const source = readFileSync(join(examplesDir.pathname, file), "utf8");
+      expect(source).not.toContain("\"result_path\"");
+      expect(source).not.toContain("\"data_ref\"");
+      expect(source).not.toContain("\"props\"");
+
+      const document = JSON.parse(source) as OpenUiDocument;
       expect(validateDocument(document)).toEqual([]);
 
       for (const target of [reactAntdTarget, angularTarget, tuiTarget]) {
@@ -65,7 +70,7 @@ describe("examples", () => {
       collections
         .flatMap((collection) => collection.actions)
         .find((action) => action.method === "update")?.form?.update_mask,
-    ).toEqual({ variable: "update_mask", value_path: "$form.update_mask" });
+    ).toEqual({ variable: "update_mask", value: { kind: "form", path: "update_mask" } });
     expect(
       collections
         .flatMap((collection) => collection.actions)
@@ -86,19 +91,7 @@ describe("examples", () => {
     const tableSpecs = routes
       .flatMap((route) => route.components)
       .filter((component) => component.kind === "table")
-      .map(
-        (component) =>
-          (
-            component.props as {
-              table: {
-                columns: unknown[];
-                row_actions?: string[];
-                bulk_actions?: string[];
-                selection?: { mode: string; required_for_bulk_actions?: boolean };
-              };
-            }
-          ).table,
-      );
+      .map((component) => component.table);
     expect(tableSpecs[0]?.columns.length).toBeGreaterThan(0);
     expect(tableSpecs[0]?.row_actions).toEqual(["open", "update", "acknowledge", "delete"]);
     expect(tableSpecs[0]?.bulk_actions).toEqual(["acknowledge", "delete"]);
@@ -106,20 +99,11 @@ describe("examples", () => {
 
     const detailSpec = routes
       .flatMap((route) => route.components)
-      .find((component) => component.kind === "detail_header")?.props as
-      | {
-          detail: {
-            sections?: unknown[];
-            tabs?: unknown[];
-            related?: unknown[];
-            timeline?: unknown;
-          };
-        }
-      | undefined;
-    expect(detailSpec?.detail.sections?.length).toBeGreaterThan(0);
-    expect(detailSpec?.detail.tabs?.length).toBeGreaterThan(0);
-    expect(detailSpec?.detail.related?.length).toBeGreaterThan(0);
-    expect(detailSpec?.detail.timeline).toBeDefined();
+      .find((component) => component.kind === "detail_header")?.detail;
+    expect(detailSpec?.sections?.length).toBeGreaterThan(0);
+    expect(detailSpec?.tabs?.length).toBeGreaterThan(0);
+    expect(detailSpec?.related?.length).toBeGreaterThan(0);
+    expect(detailSpec?.timeline).toBeDefined();
 
     const routeTransports = routes.flatMap((route) => route.data_bindings.map((binding) => binding.query.transport));
     const actionTransports = collections.flatMap((collection) => collection.actions.map((action) => action.binding.transport));
@@ -128,7 +112,7 @@ describe("examples", () => {
     const chartKinds = routes
       .flatMap((route) => route.components)
       .filter((component) => component.kind === "chart")
-      .map((component) => (component.props as { chart: { kind: ChartKind } }).chart.kind);
+      .map((component) => component.chart.kind satisfies ChartKind);
     expect(new Set(chartKinds)).toEqual(
       new Set([
         "line",

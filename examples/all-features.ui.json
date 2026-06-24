@@ -4,8 +4,14 @@
   "display_name": "Service Desk Demo",
   "default_locale": "en-US",
   "locales": [
-    { "locale": "en-US", "label": "English" },
-    { "locale": "zh-CN", "label": "中文" }
+    {
+      "locale": "en-US",
+      "label": "English"
+    },
+    {
+      "locale": "zh-CN",
+      "label": "中文"
+    }
   ],
   "messages": {
     "en-US": {},
@@ -73,18 +79,59 @@
     }
   },
   "capabilities": {
-    "layouts": ["crud_list", "detail_page", "dashboard"],
-    "component_kinds": ["filter_bar", "table", "detail_header", "metric_row", "chart", "chart_grid"],
-    "field_renderers": [
-      { "kind": "text", "description": "Plain text" },
-      { "kind": "badge", "description": "Status badge" },
-      { "kind": "datetime", "description": "Date/time" },
-      { "kind": "number", "description": "Number" },
-      { "kind": "external_link", "description": "External URL" },
-      { "kind": "json", "description": "Structured JSON" }
+    "layouts": [
+      "crud_list",
+      "detail_page",
+      "dashboard"
     ],
-    "filter_kinds": ["text", "select", "multi_select", "date_range", "boolean"],
-    "action_methods": ["get", "create", "update", "delete", "custom"]
+    "component_kinds": [
+      "filter_bar",
+      "table",
+      "detail_header",
+      "metric_row",
+      "chart",
+      "chart_grid"
+    ],
+    "field_renderers": [
+      {
+        "kind": "text",
+        "description": "Plain text"
+      },
+      {
+        "kind": "badge",
+        "description": "Status badge"
+      },
+      {
+        "kind": "datetime",
+        "description": "Date/time"
+      },
+      {
+        "kind": "number",
+        "description": "Number"
+      },
+      {
+        "kind": "external_link",
+        "description": "External URL"
+      },
+      {
+        "kind": "json",
+        "description": "Structured JSON"
+      }
+    ],
+    "filter_kinds": [
+      "text",
+      "select",
+      "multi_select",
+      "date_range",
+      "boolean"
+    ],
+    "action_methods": [
+      "get",
+      "create",
+      "update",
+      "delete",
+      "custom"
+    ]
   },
   "collections": [
     {
@@ -94,43 +141,126 @@
       "list": {
         "transport": "graphql",
         "operation": "incidentEvents",
-        "result_path": "incidentEvents.incidentEvents",
         "variables": {
-          "page_size": "$page.page_size",
-          "page_token": "$page.page_token",
-          "filter": "$filters"
+          "page_size": {
+            "kind": "page",
+            "path": "page_size"
+          },
+          "page_token": {
+            "kind": "page",
+            "path": "page_token"
+          },
+          "filter": {
+            "kind": "filters"
+          }
+        },
+        "result": {
+          "path": "incidentEvents.incidentEvents"
         }
       },
       "get": {
         "transport": "graphql",
         "operation": "incidentEvent",
-        "result_path": "incidentEvent",
         "variables": {
-          "name": "$route.name"
+          "name": {
+            "kind": "route",
+            "path": "name"
+          }
+        },
+        "result": {
+          "path": "incidentEvent"
         }
       },
       "fields": [
-        { "name": "name", "value_type": "string", "renderer": "text", "required": true, "output_only": true },
-        { "name": "title", "value_type": "string", "renderer": "text", "required": true, "output_only": false },
-        { "name": "service", "value_type": "string", "renderer": "badge", "required": true, "output_only": false },
-        { "name": "severity", "value_type": "string", "renderer": "badge", "required": true, "output_only": false },
-        { "name": "acknowledged", "value_type": "boolean", "renderer": "badge", "required": false, "output_only": false },
-        { "name": "duration_ms", "value_type": "number", "renderer": "number", "required": false, "output_only": true },
-        { "name": "created_at", "value_type": "datetime", "renderer": "datetime", "required": true, "output_only": true },
-        { "name": "external_url", "value_type": "string", "renderer": "external_link", "required": false, "output_only": false },
-        { "name": "payload", "value_type": "json", "renderer": "json", "required": false, "output_only": true }
+        {
+          "name": "name",
+          "value_type": "string",
+          "renderer": "text",
+          "required": true,
+          "output_only": true
+        },
+        {
+          "name": "title",
+          "value_type": "string",
+          "renderer": "text",
+          "required": true,
+          "output_only": false
+        },
+        {
+          "name": "service",
+          "value_type": "string",
+          "renderer": "badge",
+          "required": true,
+          "output_only": false
+        },
+        {
+          "name": "severity",
+          "value_type": "string",
+          "renderer": "badge",
+          "required": true,
+          "output_only": false
+        },
+        {
+          "name": "acknowledged",
+          "value_type": "boolean",
+          "renderer": "badge",
+          "required": false,
+          "output_only": false
+        },
+        {
+          "name": "duration_ms",
+          "value_type": "number",
+          "renderer": "number",
+          "required": false,
+          "output_only": true
+        },
+        {
+          "name": "created_at",
+          "value_type": "datetime",
+          "renderer": "datetime",
+          "required": true,
+          "output_only": true
+        },
+        {
+          "name": "external_url",
+          "value_type": "string",
+          "renderer": "external_link",
+          "required": false,
+          "output_only": false
+        },
+        {
+          "name": "payload",
+          "value_type": "json",
+          "renderer": "json",
+          "required": false,
+          "output_only": true
+        }
       ],
       "filters": [
-        { "name": "q", "label": "Search", "kind": "text", "cel_field": "title" },
+        {
+          "name": "q",
+          "label": "Search",
+          "kind": "text",
+          "cel_field": "title"
+        },
         {
           "name": "severity",
           "label": "Severity",
           "kind": "multi_select",
           "cel_field": "severity",
           "options": [
-            { "label": "Critical", "value": "critical" },
-            { "label": "Warning", "value": "warning" },
-            { "label": "Info", "value": "info" }
+            {
+              "label": "Critical",
+              "value": "critical"
+            },
+            {
+              "label": "Warning",
+              "value": "warning"
+            },
+            {
+              "label": "Info",
+              "value": "info"
+            }
           ]
         },
         {
@@ -139,13 +269,32 @@
           "kind": "select",
           "cel_field": "service",
           "options": [
-            { "label": "API", "value": "api" },
-            { "label": "Batch Worker", "value": "batch-worker" },
-            { "label": "Worker", "value": "worker" }
+            {
+              "label": "API",
+              "value": "api"
+            },
+            {
+              "label": "Batch Worker",
+              "value": "batch-worker"
+            },
+            {
+              "label": "Worker",
+              "value": "worker"
+            }
           ]
         },
-        { "name": "created", "label": "Created", "kind": "date_range", "cel_field": "created_at" },
-        { "name": "acknowledged", "label": "Acknowledged", "kind": "boolean", "cel_field": "acknowledged" }
+        {
+          "name": "created",
+          "label": "Created",
+          "kind": "date_range",
+          "cel_field": "created_at"
+        },
+        {
+          "name": "acknowledged",
+          "label": "Acknowledged",
+          "kind": "boolean",
+          "cel_field": "acknowledged"
+        }
       ],
       "actions": [
         {
@@ -155,9 +304,14 @@
           "binding": {
             "transport": "graphql",
             "operation": "incidentEvent",
-            "result_path": "incidentEvent",
             "variables": {
-              "name": "$resource.name"
+              "name": {
+                "kind": "resource",
+                "path": "name"
+              }
+            },
+            "result": {
+              "path": "incidentEvent"
             }
           }
         },
@@ -168,24 +322,88 @@
           "binding": {
             "transport": "graphql",
             "operation": "createIncidentEvent",
-            "result_path": "createIncidentEvent",
             "variables": {
-              "body": "$form"
+              "body": {
+                "kind": "form"
+              }
+            },
+            "result": {
+              "path": "createIncidentEvent"
             }
           },
           "form": {
             "fields": [
-              { "field": "title", "label": "Title", "control": "text", "required": true },
-              { "field": "service", "label": "Service", "control": "select", "required": true },
-              { "field": "severity", "label": "Severity", "control": "select", "required": true },
-              { "field": "acknowledged", "label": "Acknowledged", "control": "checkbox" },
-              { "field": "external_url", "label": "External URL", "control": "text" }
+              {
+                "field": "title",
+                "label": "Title",
+                "control": "text",
+                "required": true
+              },
+              {
+                "field": "service",
+                "label": "Service",
+                "control": "select",
+                "required": true,
+                "options": [
+                  {
+                    "label": "API",
+                    "value": "api"
+                  },
+                  {
+                    "label": "Batch Worker",
+                    "value": "batch-worker"
+                  },
+                  {
+                    "label": "Worker",
+                    "value": "worker"
+                  }
+                ]
+              },
+              {
+                "field": "severity",
+                "label": "Severity",
+                "control": "select",
+                "required": true,
+                "options": [
+                  {
+                    "label": "Critical",
+                    "value": "critical"
+                  },
+                  {
+                    "label": "Warning",
+                    "value": "warning"
+                  },
+                  {
+                    "label": "Info",
+                    "value": "info"
+                  }
+                ]
+              },
+              {
+                "field": "acknowledged",
+                "label": "Acknowledged",
+                "control": "checkbox"
+              },
+              {
+                "field": "external_url",
+                "label": "External URL",
+                "control": "text"
+              }
             ]
           },
           "interaction": {
-            "submit": { "presentation": "modal", "pending_message": "Creating incident", "disable_while_pending": true },
-            "outcome": { "success_message": "Created incident", "failure_message": "Could not create incident" },
-            "optimistic_update": { "mode": "prepend_resource" }
+            "submit": {
+              "presentation": "modal",
+              "pending_message": "Creating incident",
+              "disable_while_pending": true
+            },
+            "outcome": {
+              "success_message": "Created incident",
+              "failure_message": "Could not create incident"
+            },
+            "optimistic_update": {
+              "mode": "prepend_resource"
+            }
           }
         },
         {
@@ -195,27 +413,103 @@
           "binding": {
             "transport": "graphql",
             "operation": "updateIncidentEvent",
-            "result_path": "updateIncidentEvent",
             "variables": {
-              "name": "$resource.name",
-              "body": "$form",
-              "update_mask": "$form.update_mask"
+              "name": {
+                "kind": "resource",
+                "path": "name"
+              },
+              "body": {
+                "kind": "form"
+              },
+              "update_mask": {
+                "kind": "form",
+                "path": "update_mask"
+              }
+            },
+            "result": {
+              "path": "updateIncidentEvent"
             }
           },
           "form": {
             "fields": [
-              { "field": "title", "label": "Title", "control": "text", "required": true },
-              { "field": "service", "label": "Service", "control": "select", "required": true },
-              { "field": "severity", "label": "Severity", "control": "select", "required": true },
-              { "field": "acknowledged", "label": "Acknowledged", "control": "checkbox" },
-              { "field": "external_url", "label": "External URL", "control": "text" }
+              {
+                "field": "title",
+                "label": "Title",
+                "control": "text",
+                "required": true
+              },
+              {
+                "field": "service",
+                "label": "Service",
+                "control": "select",
+                "required": true,
+                "options": [
+                  {
+                    "label": "API",
+                    "value": "api"
+                  },
+                  {
+                    "label": "Batch Worker",
+                    "value": "batch-worker"
+                  },
+                  {
+                    "label": "Worker",
+                    "value": "worker"
+                  }
+                ]
+              },
+              {
+                "field": "severity",
+                "label": "Severity",
+                "control": "select",
+                "required": true,
+                "options": [
+                  {
+                    "label": "Critical",
+                    "value": "critical"
+                  },
+                  {
+                    "label": "Warning",
+                    "value": "warning"
+                  },
+                  {
+                    "label": "Info",
+                    "value": "info"
+                  }
+                ]
+              },
+              {
+                "field": "acknowledged",
+                "label": "Acknowledged",
+                "control": "checkbox"
+              },
+              {
+                "field": "external_url",
+                "label": "External URL",
+                "control": "text"
+              }
             ],
-            "update_mask": { "variable": "update_mask", "value_path": "$form.update_mask" }
+            "update_mask": {
+              "variable": "update_mask",
+              "value": {
+                "kind": "form",
+                "path": "update_mask"
+              }
+            }
           },
           "interaction": {
-            "submit": { "presentation": "modal", "pending_message": "Updating incident", "disable_while_pending": true },
-            "outcome": { "success_message": "Updated incident", "failure_message": "Could not update incident" },
-            "optimistic_update": { "mode": "patch_resource" }
+            "submit": {
+              "presentation": "modal",
+              "pending_message": "Updating incident",
+              "disable_while_pending": true
+            },
+            "outcome": {
+              "success_message": "Updated incident",
+              "failure_message": "Could not update incident"
+            },
+            "optimistic_update": {
+              "mode": "patch_resource"
+            }
           }
         },
         {
@@ -225,14 +519,24 @@
           "binding": {
             "transport": "graphql",
             "operation": "acknowledgeIncidentEvent",
-            "result_path": "acknowledgeIncidentEvent",
             "variables": {
-              "name": "$resource.name"
+              "name": {
+                "kind": "resource",
+                "path": "name"
+              }
+            },
+            "result": {
+              "path": "acknowledgeIncidentEvent"
             }
           },
           "interaction": {
-            "outcome": { "success_message": "Acknowledged incident", "failure_message": "Could not acknowledge incident" },
-            "optimistic_update": { "mode": "patch_resource" }
+            "outcome": {
+              "success_message": "Acknowledged incident",
+              "failure_message": "Could not acknowledge incident"
+            },
+            "optimistic_update": {
+              "mode": "patch_resource"
+            }
           }
         },
         {
@@ -242,9 +546,14 @@
           "binding": {
             "transport": "graphql",
             "operation": "deleteIncidentEvent",
-            "result_path": "deleteIncidentEvent",
             "variables": {
-              "name": "$resource.name"
+              "name": {
+                "kind": "resource",
+                "path": "name"
+              }
+            },
+            "result": {
+              "path": "deleteIncidentEvent"
             }
           },
           "interaction": {
@@ -255,8 +564,13 @@
               "cancel_label": "Cancel",
               "destructive": true
             },
-            "outcome": { "success_message": "Deleted incident", "failure_message": "Could not delete incident" },
-            "optimistic_update": { "mode": "remove_resource" }
+            "outcome": {
+              "success_message": "Deleted incident",
+              "failure_message": "Could not delete incident"
+            },
+            "optimistic_update": {
+              "mode": "remove_resource"
+            }
           }
         }
       ],
@@ -266,10 +580,18 @@
         "page_token_param": "page_token",
         "next_page_token_path": "nextPageToken",
         "order_by": [
-          { "field": "created_at", "direction": "desc" },
-          { "field": "name", "direction": "asc" }
+          {
+            "field": "created_at",
+            "direction": "desc"
+          },
+          {
+            "field": "name",
+            "direction": "asc"
+          }
         ],
-        "unique_key_fields": ["name"]
+        "unique_key_fields": [
+          "name"
+        ]
       }
     }
   ],
@@ -278,43 +600,101 @@
       "route": "/incidents",
       "title": "Incident Events",
       "layout": "crud_list",
-      "navigation": { "group": "Operations", "order": 1 },
+      "navigation": {
+        "group": "Operations",
+        "order": 1
+      },
       "data_bindings": [
         {
           "name": "incidents",
           "query": {
             "transport": "graphql",
             "operation": "incidentEvents",
-            "result_path": "incidentEvents.incidentEvents",
             "variables": {
-              "page_size": "$page.page_size",
-              "page_token": "$page.page_token",
-              "filter": "$filters"
+              "page_size": {
+                "kind": "page",
+                "path": "page_size"
+              },
+              "page_token": {
+                "kind": "page",
+                "path": "page_token"
+              },
+              "filter": {
+                "kind": "filters"
+              }
+            },
+            "result": {
+              "path": "incidentEvents.incidentEvents"
             }
           }
         }
       ],
       "components": [
-        { "id": "filters", "kind": "filter_bar", "props": { "collection": "incidentEvents" } },
+        {
+          "id": "filters",
+          "kind": "filter_bar",
+          "collection": "incidentEvents"
+        },
         {
           "id": "table",
           "kind": "table",
-          "data_ref": "incidents",
-          "props": {
-            "table": {
-              "collection": "incidentEvents",
-              "columns": [
-                { "id": "title", "field": "title", "label": "Title", "sortable": false, "visible": true },
-                { "id": "service", "field": "service", "label": "Service", "sortable": false, "visible": true },
-                { "id": "severity", "field": "severity", "label": "Severity", "sortable": false, "visible": true },
-                { "id": "created", "field": "created_at", "label": "Created", "sortable": true, "visible": true },
-                { "id": "acknowledged", "field": "acknowledged", "label": "Acknowledged", "sortable": false, "visible": true }
-              ],
-              "selection": { "mode": "multiple", "required_for_bulk_actions": true },
-              "row_navigation": "/incidents/{name}",
-              "row_actions": ["open", "update", "acknowledge", "delete"],
-              "bulk_actions": ["acknowledge", "delete"]
-            }
+          "data": {
+            "binding": "incidents"
+          },
+          "table": {
+            "collection": "incidentEvents",
+            "columns": [
+              {
+                "id": "title",
+                "field": "title",
+                "label": "Title",
+                "sortable": false,
+                "visible": true
+              },
+              {
+                "id": "service",
+                "field": "service",
+                "label": "Service",
+                "sortable": false,
+                "visible": true
+              },
+              {
+                "id": "severity",
+                "field": "severity",
+                "label": "Severity",
+                "sortable": false,
+                "visible": true
+              },
+              {
+                "id": "created",
+                "field": "created_at",
+                "label": "Created",
+                "sortable": true,
+                "visible": true
+              },
+              {
+                "id": "acknowledged",
+                "field": "acknowledged",
+                "label": "Acknowledged",
+                "sortable": false,
+                "visible": true
+              }
+            ],
+            "selection": {
+              "mode": "multiple",
+              "required_for_bulk_actions": true
+            },
+            "row_navigation": "/incidents/{name}",
+            "row_actions": [
+              "open",
+              "update",
+              "acknowledge",
+              "delete"
+            ],
+            "bulk_actions": [
+              "acknowledge",
+              "delete"
+            ]
           }
         }
       ]
@@ -323,16 +703,24 @@
       "route": "/incidents/:name",
       "title": "Incident Detail",
       "layout": "detail_page",
-      "navigation": { "group": "Operations", "order": 2 },
+      "navigation": {
+        "group": "Operations",
+        "order": 2
+      },
       "data_bindings": [
         {
           "name": "incident",
           "query": {
             "transport": "graphql",
             "operation": "incidentEvent",
-            "result_path": "incidentEvent",
             "variables": {
-              "name": "$route.name"
+              "name": {
+                "kind": "route",
+                "path": "name"
+              }
+            },
+            "result": {
+              "path": "incidentEvent"
             }
           }
         },
@@ -341,9 +729,14 @@
           "query": {
             "transport": "graphql",
             "operation": "relatedIncidentEvents",
-            "result_path": "relatedIncidentEvents.incidentEvents",
             "variables": {
-              "name": "$route.name"
+              "name": {
+                "kind": "route",
+                "path": "name"
+              }
+            },
+            "result": {
+              "path": "relatedIncidentEvents.incidentEvents"
             }
           }
         },
@@ -352,9 +745,14 @@
           "query": {
             "transport": "graphql",
             "operation": "incidentTimeline",
-            "result_path": "incidentTimeline.events",
             "variables": {
-              "name": "$route.name"
+              "name": {
+                "kind": "route",
+                "path": "name"
+              }
+            },
+            "result": {
+              "path": "incidentTimeline.events"
             }
           }
         }
@@ -363,46 +761,108 @@
         {
           "id": "header",
           "kind": "detail_header",
-          "data_ref": "incident",
-          "props": {
-            "detail": {
-              "collection": "incidentEvents",
-              "title_field": "title",
-              "subtitle_field": "service",
-              "status_field": "severity",
-              "actions": ["open", "update", "acknowledge", "delete"],
-              "sections": [
-                { "id": "overview", "label": "Overview", "fields": ["title", "service", "severity", "acknowledged"] },
-                { "id": "metadata", "label": "Metadata", "fields": ["created_at", "duration_ms", "external_url"] }
-              ],
-              "tabs": [
-                { "id": "summary", "label": "Summary", "sections": ["overview", "metadata"] },
-                { "id": "related", "label": "Related", "related": ["relatedIncidents"] },
-                { "id": "activity", "label": "Activity" }
-              ],
-              "related": [
-                {
-                  "id": "relatedIncidents",
-                  "label": "Related Incidents",
+          "data": {
+            "binding": "incident"
+          },
+          "detail": {
+            "collection": "incidentEvents",
+            "title_field": "title",
+            "subtitle_field": "service",
+            "status_field": "severity",
+            "actions": [
+              "open",
+              "update",
+              "acknowledge",
+              "delete"
+            ],
+            "sections": [
+              {
+                "id": "overview",
+                "label": "Overview",
+                "fields": [
+                  "title",
+                  "service",
+                  "severity",
+                  "acknowledged"
+                ]
+              },
+              {
+                "id": "metadata",
+                "label": "Metadata",
+                "fields": [
+                  "created_at",
+                  "duration_ms",
+                  "external_url"
+                ]
+              }
+            ],
+            "tabs": [
+              {
+                "id": "summary",
+                "label": "Summary",
+                "sections": [
+                  "overview",
+                  "metadata"
+                ]
+              },
+              {
+                "id": "related",
+                "label": "Related",
+                "related": [
+                  "relatedIncidents"
+                ]
+              },
+              {
+                "id": "activity",
+                "label": "Activity"
+              }
+            ],
+            "related": [
+              {
+                "id": "relatedIncidents",
+                "label": "Related Incidents",
+                "collection": "incidentEvents",
+                "table": {
                   "collection": "incidentEvents",
-                  "data_ref": "relatedIncidents",
-                  "table": {
-                    "collection": "incidentEvents",
-                    "columns": [
-                      { "id": "title", "field": "title", "label": "Title", "sortable": false, "visible": true },
-                      { "id": "severity", "field": "severity", "label": "Severity", "sortable": false, "visible": true },
-                      { "id": "created", "field": "created_at", "label": "Created", "sortable": true, "visible": true }
-                    ],
-                    "row_navigation": "/incidents/{name}",
-                    "row_actions": ["open"]
-                  }
+                  "columns": [
+                    {
+                      "id": "title",
+                      "field": "title",
+                      "label": "Title",
+                      "sortable": false,
+                      "visible": true
+                    },
+                    {
+                      "id": "severity",
+                      "field": "severity",
+                      "label": "Severity",
+                      "sortable": false,
+                      "visible": true
+                    },
+                    {
+                      "id": "created",
+                      "field": "created_at",
+                      "label": "Created",
+                      "sortable": true,
+                      "visible": true
+                    }
+                  ],
+                  "row_navigation": "/incidents/{name}",
+                  "row_actions": [
+                    "open"
+                  ]
+                },
+                "data": {
+                  "binding": "relatedIncidents"
                 }
-              ],
-              "timeline": {
-                "data_ref": "timeline",
-                "title_field": "title",
-                "time_field": "created_at",
-                "description_field": "service"
+              }
+            ],
+            "timeline": {
+              "title_field": "title",
+              "time_field": "created_at",
+              "description_field": "service",
+              "data": {
+                "binding": "timeline"
               }
             }
           }
@@ -410,14 +870,21 @@
         {
           "id": "payload",
           "kind": "table",
-          "data_ref": "incident.payload",
-          "props": {
-            "table": {
-              "collection": "incidentEvents",
-              "columns": [
-                { "id": "payload", "field": "payload", "label": "Payload", "sortable": false, "visible": true }
-              ]
-            }
+          "data": {
+            "binding": "incident",
+            "path": "payload"
+          },
+          "table": {
+            "collection": "incidentEvents",
+            "columns": [
+              {
+                "id": "payload",
+                "field": "payload",
+                "label": "Payload",
+                "sortable": false,
+                "visible": true
+              }
+            ]
           }
         }
       ]
@@ -426,15 +893,20 @@
       "route": "/incidents/dashboard",
       "title": "Incident Dashboard",
       "layout": "dashboard",
-      "navigation": { "group": "Operations", "order": 3 },
+      "navigation": {
+        "group": "Operations",
+        "order": 3
+      },
       "data_bindings": [
         {
           "name": "stats",
           "query": {
             "transport": "graphql",
             "operation": "incidentDashboard",
-            "result_path": "incidentDashboard",
-            "variables": {}
+            "variables": {},
+            "result": {
+              "path": "incidentDashboard"
+            }
           }
         },
         {
@@ -442,8 +914,10 @@
           "query": {
             "transport": "graphql",
             "operation": "incidentSeries",
-            "result_path": "incidentSeries.points",
-            "variables": {}
+            "variables": {},
+            "result": {
+              "path": "incidentSeries.points"
+            }
           }
         }
       ],
@@ -451,223 +925,290 @@
         {
           "id": "kpis",
           "kind": "metric_row",
-          "data_ref": "stats",
-          "props": {
-            "metrics": [
-              { "id": "open", "label": "Open", "value_path": "open_count", "format": "number" },
-              { "id": "critical", "label": "Critical", "value_path": "critical_count", "format": "number" },
-              { "id": "ack_rate", "label": "Ack Rate", "value_path": "ack_rate", "format": "percent" }
-            ]
-          }
+          "data": {
+            "binding": "stats"
+          },
+          "metrics": [
+            {
+              "id": "open",
+              "label": "Open",
+              "value_path": "open_count",
+              "format": "number"
+            },
+            {
+              "id": "critical",
+              "label": "Critical",
+              "value_path": "critical_count",
+              "format": "number"
+            },
+            {
+              "id": "ack_rate",
+              "label": "Ack Rate",
+              "value_path": "ack_rate",
+              "format": "percent"
+            }
+          ]
         },
         {
           "id": "incidents-by-day",
           "kind": "chart",
-          "data_ref": "series",
-          "props": {
-            "chart": {
-              "kind": "line",
-              "title": "Incidents by Day",
-              "encoding": { "x": "day", "y": "count", "color": "severity" },
-              "height": 320,
-              "smooth": true
-            }
+          "data": {
+            "binding": "series"
+          },
+          "chart": {
+            "kind": "line",
+            "title": "Incidents by Day",
+            "encoding": {
+              "x": "day",
+              "y": "count",
+              "color": "severity"
+            },
+            "height": 320,
+            "smooth": true
           }
         },
         {
           "id": "severity-share",
           "kind": "chart",
-          "data_ref": "series",
-          "props": {
-            "chart": {
-              "kind": "pie",
-              "title": "Severity Share",
-              "encoding": { "value": "count", "category": "severity" },
-              "height": 260
-            }
+          "data": {
+            "binding": "series"
+          },
+          "chart": {
+            "kind": "pie",
+            "title": "Severity Share",
+            "encoding": {
+              "value": "count",
+              "category": "severity"
+            },
+            "height": 260
           }
         },
         {
           "id": "service-heatmap",
           "kind": "chart",
-          "data_ref": "series",
-          "props": {
-            "chart": {
-              "kind": "heatmap",
-              "title": "Service Heatmap",
-              "encoding": { "x": "service", "y": "hour", "color": "count" },
-              "height": 300
-            }
+          "data": {
+            "binding": "series"
+          },
+          "chart": {
+            "kind": "heatmap",
+            "title": "Service Heatmap",
+            "encoding": {
+              "x": "service",
+              "y": "hour",
+              "color": "count"
+            },
+            "height": 300
           }
         },
         {
           "id": "severity-bars",
           "kind": "chart",
-          "data_ref": "series",
-          "props": {
-            "chart": {
-              "kind": "bar",
-              "title": "Severity Bars",
-              "encoding": { "x": "severity", "y": "count", "color": "severity" },
-              "height": 280,
-              "stack": true
-            }
+          "data": {
+            "binding": "series"
+          },
+          "chart": {
+            "kind": "bar",
+            "title": "Severity Bars",
+            "encoding": {
+              "x": "severity",
+              "y": "count",
+              "color": "severity"
+            },
+            "height": 280,
+            "stack": true
           }
         },
         {
           "id": "response-area",
           "kind": "chart",
-          "data_ref": "series",
-          "props": {
-            "chart": {
-              "kind": "area",
-              "title": "Response Trend",
-              "encoding": { "x": "day", "y": "response_minutes", "color": "service" },
-              "height": 280,
-              "smooth": true
-            }
+          "data": {
+            "binding": "series"
+          },
+          "chart": {
+            "kind": "area",
+            "title": "Response Trend",
+            "encoding": {
+              "x": "day",
+              "y": "response_minutes",
+              "color": "service"
+            },
+            "height": 280,
+            "smooth": true
           }
         },
         {
           "id": "load-scatter",
           "kind": "chart",
-          "data_ref": "series",
-          "props": {
-            "chart": {
-              "kind": "scatter",
-              "title": "Load vs Duration",
-              "encoding": { "x": "request_rate", "y": "duration_ms", "size": "count", "color": "severity" },
-              "height": 280
-            }
+          "data": {
+            "binding": "series"
+          },
+          "chart": {
+            "kind": "scatter",
+            "title": "Load vs Duration",
+            "encoding": {
+              "x": "request_rate",
+              "y": "duration_ms",
+              "size": "count",
+              "color": "severity"
+            },
+            "height": 280
           }
         },
         {
           "id": "service-radar",
           "kind": "chart",
-          "data_ref": "series",
-          "props": {
-            "chart": {
-              "kind": "radar",
-              "title": "Service Radar",
-              "encoding": { "x": "service", "y": "count", "color": "severity" },
-              "height": 280
-            }
+          "data": {
+            "binding": "series"
+          },
+          "chart": {
+            "kind": "radar",
+            "title": "Service Radar",
+            "encoding": {
+              "x": "service",
+              "y": "count",
+              "color": "severity"
+            },
+            "height": 280
           }
         },
         {
           "id": "severity-rose",
           "kind": "chart",
-          "data_ref": "series",
-          "props": {
-            "chart": {
-              "kind": "rose",
-              "title": "Severity Rose",
-              "encoding": { "category": "severity", "value": "count", "color": "severity" },
-              "height": 280
-            }
+          "data": {
+            "binding": "series"
+          },
+          "chart": {
+            "kind": "rose",
+            "title": "Severity Rose",
+            "encoding": {
+              "category": "severity",
+              "value": "count",
+              "color": "severity"
+            },
+            "height": 280
           }
         },
         {
           "id": "service-radial",
           "kind": "chart",
-          "data_ref": "series",
-          "props": {
-            "chart": {
-              "kind": "radial_bar",
-              "title": "Service Radial",
-              "encoding": { "x": "service", "y": "count", "color": "service" },
-              "height": 280
-            }
+          "data": {
+            "binding": "series"
+          },
+          "chart": {
+            "kind": "radial_bar",
+            "title": "Service Radial",
+            "encoding": {
+              "x": "service",
+              "y": "count",
+              "color": "service"
+            },
+            "height": 280
           }
         },
         {
           "id": "incident-funnel",
           "kind": "chart",
-          "data_ref": "series",
-          "props": {
-            "chart": {
-              "kind": "funnel",
-              "title": "Incident Funnel",
-              "encoding": { "x": "severity", "y": "count", "color": "severity" },
-              "height": 280
-            }
+          "data": {
+            "binding": "series"
+          },
+          "chart": {
+            "kind": "funnel",
+            "title": "Incident Funnel",
+            "encoding": {
+              "x": "severity",
+              "y": "count",
+              "color": "severity"
+            },
+            "height": 280
           }
         },
         {
           "id": "service-treemap",
           "kind": "chart",
-          "data_ref": "series",
-          "props": {
-            "chart": {
-              "kind": "treemap",
-              "title": "Service Treemap",
-              "encoding": { "category": "service", "value": "count", "color": "service" },
-              "height": 280
-            }
+          "data": {
+            "binding": "series"
+          },
+          "chart": {
+            "kind": "treemap",
+            "title": "Service Treemap",
+            "encoding": {
+              "category": "service",
+              "value": "count",
+              "color": "service"
+            },
+            "height": 280
           }
         },
         {
           "id": "service-word-cloud",
           "kind": "chart",
-          "data_ref": "series",
-          "props": {
-            "chart": {
-              "kind": "word_cloud",
-              "title": "Service Word Cloud",
-              "encoding": { "category": "service", "value": "count", "color": "service" },
-              "height": 280
-            }
+          "data": {
+            "binding": "series"
+          },
+          "chart": {
+            "kind": "word_cloud",
+            "title": "Service Word Cloud",
+            "encoding": {
+              "category": "service",
+              "value": "count",
+              "color": "service"
+            },
+            "height": 280
           }
         },
         {
           "id": "ack-gauge",
           "kind": "chart",
-          "data_ref": "stats",
-          "props": {
-            "chart": {
-              "kind": "gauge",
-              "title": "Acknowledgement Gauge",
-              "encoding": { "value": "ack_rate" },
-              "height": 260
-            }
+          "data": {
+            "binding": "stats"
+          },
+          "chart": {
+            "kind": "gauge",
+            "title": "Acknowledgement Gauge",
+            "encoding": {
+              "value": "ack_rate"
+            },
+            "height": 260
           }
         },
         {
           "id": "ack-liquid",
           "kind": "chart",
-          "data_ref": "stats",
-          "props": {
-            "chart": {
-              "kind": "liquid",
-              "title": "Acknowledgement Liquid",
-              "encoding": { "value": "ack_rate" },
-              "height": 260
-            }
+          "data": {
+            "binding": "stats"
+          },
+          "chart": {
+            "kind": "liquid",
+            "title": "Acknowledgement Liquid",
+            "encoding": {
+              "value": "ack_rate"
+            },
+            "height": 260
           }
         },
         {
           "id": "visualization-grid",
           "kind": "chart_grid",
-          "data_ref": "series",
-          "props": {
-            "columns": 2,
-            "chart_refs": [
-              "incidents-by-day",
-              "severity-share",
-              "service-heatmap",
-              "severity-bars",
-              "response-area",
-              "load-scatter",
-              "service-radar",
-              "severity-rose",
-              "service-radial",
-              "incident-funnel",
-              "service-treemap",
-              "service-word-cloud",
-              "ack-gauge",
-              "ack-liquid"
-            ]
-          }
+          "data": {
+            "binding": "series"
+          },
+          "columns": 2,
+          "chart_refs": [
+            "incidents-by-day",
+            "severity-share",
+            "service-heatmap",
+            "severity-bars",
+            "response-area",
+            "load-scatter",
+            "service-radar",
+            "severity-rose",
+            "service-radial",
+            "incident-funnel",
+            "service-treemap",
+            "service-word-cloud",
+            "ack-gauge",
+            "ack-liquid"
+          ]
         }
       ]
     }

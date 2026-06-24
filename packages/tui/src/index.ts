@@ -1,10 +1,9 @@
 import type { CompileContext, CompileOutput, CompilerTarget, TargetManifest } from "@open-ui-ir/compiler-core";
-import type { ComponentProps } from "@open-ui-ir/protocol";
 
 export interface TuiScreen {
   title: string;
   route: string;
-  sections: Array<{ kind: string; id: string; data_ref?: string; visualization?: string }>;
+  sections: Array<{ kind: string; id: string; data?: { binding: string; path?: string }; visualization?: string }>;
 }
 
 export const tuiManifest: TargetManifest = {
@@ -43,8 +42,8 @@ export const tuiTarget: CompilerTarget = {
       sections: route.components.map((component) => ({
         kind: component.kind,
         id: component.id,
-        ...(component.data_ref !== undefined ? { data_ref: component.data_ref } : {}),
-        ...(component.kind === "chart" ? { visualization: readChartKind(component.props) } : {}),
+        ...(component.data !== undefined ? { data: component.data } : {}),
+        ...(component.kind === "chart" ? { visualization: readChartKind(component) } : {}),
       })),
     }));
 
@@ -61,8 +60,8 @@ export const tuiTarget: CompilerTarget = {
   },
 };
 
-function readChartKind(props: ComponentProps): string {
-  const chart = "chart" in props ? props.chart : undefined;
+function readChartKind(component: { chart?: unknown }): string {
+  const chart = component.chart;
   if (chart && typeof chart === "object" && "kind" in chart) {
     return String((chart as { kind: unknown }).kind);
   }

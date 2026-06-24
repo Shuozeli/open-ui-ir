@@ -128,25 +128,25 @@ function readChart(component: ComponentSpec): {
   stack?: boolean;
   smooth?: boolean;
 } {
-  const chart = (component.props as { chart?: unknown }).chart;
+  const chart = (component as { chart?: unknown }).chart;
   if (!chart || typeof chart !== "object") {
-    throw new Error(`chart component ${component.id} is missing props.chart`);
+    throw new Error(`chart component ${component.id} is missing chart`);
   }
   return chart as ReturnType<typeof readChart>;
 }
 
 function readTable(component: ComponentSpec): TableSpec {
-  const table = (component.props as { table?: unknown }).table;
+  const table = (component as { table?: unknown }).table;
   if (!table || typeof table !== "object") {
-    throw new Error(`table component ${component.id} is missing props.table`);
+    throw new Error(`table component ${component.id} is missing table`);
   }
   return table as TableSpec;
 }
 
 function readDetail(component: ComponentSpec): DetailSpec {
-  const detail = (component.props as { detail?: unknown }).detail;
+  const detail = (component as { detail?: unknown }).detail;
   if (!detail || typeof detail !== "object") {
-    throw new Error(`detail component ${component.id} is missing props.detail`);
+    throw new Error(`detail component ${component.id} is missing detail`);
   }
   return detail as DetailSpec;
 }

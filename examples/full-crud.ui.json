@@ -3,22 +3,64 @@
   "app_name": "work-items",
   "display_name": "Work Items",
   "default_locale": "en-US",
-  "locales": [{ "locale": "en-US", "label": "English" }],
+  "locales": [
+    {
+      "locale": "en-US",
+      "label": "English"
+    }
+  ],
   "messages": {
     "en-US": {}
   },
   "capabilities": {
-    "layouts": ["crud_list", "detail_page", "dashboard"],
-    "component_kinds": ["filter_bar", "table", "detail_header", "metric_row", "chart"],
-    "field_renderers": [
-      { "kind": "text", "description": "Plain text" },
-      { "kind": "badge", "description": "Compact categorical value" },
-      { "kind": "datetime", "description": "Locale-aware timestamp" },
-      { "kind": "number", "description": "Locale-aware number" },
-      { "kind": "json", "description": "Structured JSON payload" }
+    "layouts": [
+      "crud_list",
+      "detail_page",
+      "dashboard"
     ],
-    "filter_kinds": ["text", "select", "multi_select", "date_range", "boolean"],
-    "action_methods": ["get", "create", "update", "delete", "custom"]
+    "component_kinds": [
+      "filter_bar",
+      "table",
+      "detail_header",
+      "metric_row",
+      "chart"
+    ],
+    "field_renderers": [
+      {
+        "kind": "text",
+        "description": "Plain text"
+      },
+      {
+        "kind": "badge",
+        "description": "Compact categorical value"
+      },
+      {
+        "kind": "datetime",
+        "description": "Locale-aware timestamp"
+      },
+      {
+        "kind": "number",
+        "description": "Locale-aware number"
+      },
+      {
+        "kind": "json",
+        "description": "Structured JSON payload"
+      }
+    ],
+    "filter_kinds": [
+      "text",
+      "select",
+      "multi_select",
+      "date_range",
+      "boolean"
+    ],
+    "action_methods": [
+      "get",
+      "create",
+      "update",
+      "delete",
+      "custom"
+    ]
   },
   "collections": [
     {
@@ -28,43 +70,126 @@
       "list": {
         "transport": "graphql",
         "operation": "workItems",
-        "result_path": "workItems.workItems",
         "variables": {
-          "page_size": "$page.page_size",
-          "page_token": "$page.page_token",
-          "filter": "$filters"
+          "page_size": {
+            "kind": "page",
+            "path": "page_size"
+          },
+          "page_token": {
+            "kind": "page",
+            "path": "page_token"
+          },
+          "filter": {
+            "kind": "filters"
+          }
+        },
+        "result": {
+          "path": "workItems.workItems"
         }
       },
       "get": {
         "transport": "graphql",
         "operation": "workItem",
-        "result_path": "workItem",
         "variables": {
-          "name": "$route.name"
+          "name": {
+            "kind": "route",
+            "path": "name"
+          }
+        },
+        "result": {
+          "path": "workItem"
         }
       },
       "fields": [
-        { "name": "name", "value_type": "string", "renderer": "text", "required": true, "output_only": true },
-        { "name": "title", "value_type": "string", "renderer": "text", "required": true, "output_only": false },
-        { "name": "state", "value_type": "string", "renderer": "badge", "required": true, "output_only": false },
-        { "name": "priority", "value_type": "string", "renderer": "badge", "required": false, "output_only": false },
-        { "name": "owner", "value_type": "string", "renderer": "text", "required": false, "output_only": false },
-        { "name": "blocked", "value_type": "boolean", "renderer": "badge", "required": false, "output_only": false },
-        { "name": "estimate_points", "value_type": "number", "renderer": "number", "required": false, "output_only": false },
-        { "name": "updated_at", "value_type": "datetime", "renderer": "datetime", "required": true, "output_only": true },
-        { "name": "payload", "value_type": "json", "renderer": "json", "required": false, "output_only": true }
+        {
+          "name": "name",
+          "value_type": "string",
+          "renderer": "text",
+          "required": true,
+          "output_only": true
+        },
+        {
+          "name": "title",
+          "value_type": "string",
+          "renderer": "text",
+          "required": true,
+          "output_only": false
+        },
+        {
+          "name": "state",
+          "value_type": "string",
+          "renderer": "badge",
+          "required": true,
+          "output_only": false
+        },
+        {
+          "name": "priority",
+          "value_type": "string",
+          "renderer": "badge",
+          "required": false,
+          "output_only": false
+        },
+        {
+          "name": "owner",
+          "value_type": "string",
+          "renderer": "text",
+          "required": false,
+          "output_only": false
+        },
+        {
+          "name": "blocked",
+          "value_type": "boolean",
+          "renderer": "badge",
+          "required": false,
+          "output_only": false
+        },
+        {
+          "name": "estimate_points",
+          "value_type": "number",
+          "renderer": "number",
+          "required": false,
+          "output_only": false
+        },
+        {
+          "name": "updated_at",
+          "value_type": "datetime",
+          "renderer": "datetime",
+          "required": true,
+          "output_only": true
+        },
+        {
+          "name": "payload",
+          "value_type": "json",
+          "renderer": "json",
+          "required": false,
+          "output_only": true
+        }
       ],
       "filters": [
-        { "name": "q", "label": "Search", "kind": "text", "cel_field": "title" },
+        {
+          "name": "q",
+          "label": "Search",
+          "kind": "text",
+          "cel_field": "title"
+        },
         {
           "name": "state",
           "label": "State",
           "kind": "select",
           "cel_field": "state",
           "options": [
-            { "label": "Open", "value": "open" },
-            { "label": "In Progress", "value": "in_progress" },
-            { "label": "Done", "value": "done" }
+            {
+              "label": "Open",
+              "value": "open"
+            },
+            {
+              "label": "In Progress",
+              "value": "in_progress"
+            },
+            {
+              "label": "Done",
+              "value": "done"
+            }
           ]
         },
         {
@@ -73,13 +198,32 @@
           "kind": "multi_select",
           "cel_field": "priority",
           "options": [
-            { "label": "High", "value": "high" },
-            { "label": "Medium", "value": "medium" },
-            { "label": "Low", "value": "low" }
+            {
+              "label": "High",
+              "value": "high"
+            },
+            {
+              "label": "Medium",
+              "value": "medium"
+            },
+            {
+              "label": "Low",
+              "value": "low"
+            }
           ]
         },
-        { "name": "updated", "label": "Updated", "kind": "date_range", "cel_field": "updated_at" },
-        { "name": "blocked", "label": "Blocked", "kind": "boolean", "cel_field": "blocked" }
+        {
+          "name": "updated",
+          "label": "Updated",
+          "kind": "date_range",
+          "cel_field": "updated_at"
+        },
+        {
+          "name": "blocked",
+          "label": "Blocked",
+          "kind": "boolean",
+          "cel_field": "blocked"
+        }
       ],
       "actions": [
         {
@@ -89,8 +233,15 @@
           "binding": {
             "transport": "graphql",
             "operation": "workItem",
-            "result_path": "workItem",
-            "variables": { "name": "$resource.name" }
+            "variables": {
+              "name": {
+                "kind": "resource",
+                "path": "name"
+              }
+            },
+            "result": {
+              "path": "workItem"
+            }
           }
         },
         {
@@ -100,23 +251,92 @@
           "binding": {
             "transport": "graphql",
             "operation": "createWorkItem",
-            "result_path": "createWorkItem",
-            "variables": { "body": "$form" }
+            "variables": {
+              "body": {
+                "kind": "form"
+              }
+            },
+            "result": {
+              "path": "createWorkItem"
+            }
           },
           "form": {
             "fields": [
-              { "field": "title", "label": "Title", "control": "text", "required": true },
-              { "field": "state", "label": "State", "control": "select", "required": true },
-              { "field": "priority", "label": "Priority", "control": "select" },
-              { "field": "owner", "label": "Owner", "control": "text" },
-              { "field": "blocked", "label": "Blocked", "control": "checkbox" },
-              { "field": "estimate_points", "label": "Estimate", "control": "number" }
+              {
+                "field": "title",
+                "label": "Title",
+                "control": "text",
+                "required": true
+              },
+              {
+                "field": "state",
+                "label": "State",
+                "control": "select",
+                "required": true,
+                "options": [
+                  {
+                    "label": "Open",
+                    "value": "open"
+                  },
+                  {
+                    "label": "In Progress",
+                    "value": "in_progress"
+                  },
+                  {
+                    "label": "Done",
+                    "value": "done"
+                  }
+                ]
+              },
+              {
+                "field": "priority",
+                "label": "Priority",
+                "control": "select",
+                "options": [
+                  {
+                    "label": "High",
+                    "value": "high"
+                  },
+                  {
+                    "label": "Medium",
+                    "value": "medium"
+                  },
+                  {
+                    "label": "Low",
+                    "value": "low"
+                  }
+                ]
+              },
+              {
+                "field": "owner",
+                "label": "Owner",
+                "control": "text"
+              },
+              {
+                "field": "blocked",
+                "label": "Blocked",
+                "control": "checkbox"
+              },
+              {
+                "field": "estimate_points",
+                "label": "Estimate",
+                "control": "number"
+              }
             ]
           },
           "interaction": {
-            "submit": { "presentation": "modal", "pending_message": "Creating work item", "disable_while_pending": true },
-            "outcome": { "success_message": "Created work item", "failure_message": "Could not create work item" },
-            "optimistic_update": { "mode": "prepend_resource" }
+            "submit": {
+              "presentation": "modal",
+              "pending_message": "Creating work item",
+              "disable_while_pending": true
+            },
+            "outcome": {
+              "success_message": "Created work item",
+              "failure_message": "Could not create work item"
+            },
+            "optimistic_update": {
+              "mode": "prepend_resource"
+            }
           }
         },
         {
@@ -126,24 +346,107 @@
           "binding": {
             "transport": "graphql",
             "operation": "updateWorkItem",
-            "result_path": "updateWorkItem",
-            "variables": { "name": "$resource.name", "body": "$form", "update_mask": "$form.update_mask" }
+            "variables": {
+              "name": {
+                "kind": "resource",
+                "path": "name"
+              },
+              "body": {
+                "kind": "form"
+              },
+              "update_mask": {
+                "kind": "form",
+                "path": "update_mask"
+              }
+            },
+            "result": {
+              "path": "updateWorkItem"
+            }
           },
           "form": {
             "fields": [
-              { "field": "title", "label": "Title", "control": "text", "required": true },
-              { "field": "state", "label": "State", "control": "select", "required": true },
-              { "field": "priority", "label": "Priority", "control": "select" },
-              { "field": "owner", "label": "Owner", "control": "text" },
-              { "field": "blocked", "label": "Blocked", "control": "checkbox" },
-              { "field": "estimate_points", "label": "Estimate", "control": "number" }
+              {
+                "field": "title",
+                "label": "Title",
+                "control": "text",
+                "required": true
+              },
+              {
+                "field": "state",
+                "label": "State",
+                "control": "select",
+                "required": true,
+                "options": [
+                  {
+                    "label": "Open",
+                    "value": "open"
+                  },
+                  {
+                    "label": "In Progress",
+                    "value": "in_progress"
+                  },
+                  {
+                    "label": "Done",
+                    "value": "done"
+                  }
+                ]
+              },
+              {
+                "field": "priority",
+                "label": "Priority",
+                "control": "select",
+                "options": [
+                  {
+                    "label": "High",
+                    "value": "high"
+                  },
+                  {
+                    "label": "Medium",
+                    "value": "medium"
+                  },
+                  {
+                    "label": "Low",
+                    "value": "low"
+                  }
+                ]
+              },
+              {
+                "field": "owner",
+                "label": "Owner",
+                "control": "text"
+              },
+              {
+                "field": "blocked",
+                "label": "Blocked",
+                "control": "checkbox"
+              },
+              {
+                "field": "estimate_points",
+                "label": "Estimate",
+                "control": "number"
+              }
             ],
-            "update_mask": { "variable": "update_mask", "value_path": "$form.update_mask" }
+            "update_mask": {
+              "variable": "update_mask",
+              "value": {
+                "kind": "form",
+                "path": "update_mask"
+              }
+            }
           },
           "interaction": {
-            "submit": { "presentation": "modal", "pending_message": "Updating work item", "disable_while_pending": true },
-            "outcome": { "success_message": "Updated work item", "failure_message": "Could not update work item" },
-            "optimistic_update": { "mode": "patch_resource" }
+            "submit": {
+              "presentation": "modal",
+              "pending_message": "Updating work item",
+              "disable_while_pending": true
+            },
+            "outcome": {
+              "success_message": "Updated work item",
+              "failure_message": "Could not update work item"
+            },
+            "optimistic_update": {
+              "mode": "patch_resource"
+            }
           }
         },
         {
@@ -153,12 +456,24 @@
           "binding": {
             "transport": "graphql",
             "operation": "closeWorkItem",
-            "result_path": "closeWorkItem",
-            "variables": { "name": "$resource.name" }
+            "variables": {
+              "name": {
+                "kind": "resource",
+                "path": "name"
+              }
+            },
+            "result": {
+              "path": "closeWorkItem"
+            }
           },
           "interaction": {
-            "outcome": { "success_message": "Closed work item", "failure_message": "Could not close work item" },
-            "optimistic_update": { "mode": "patch_resource" }
+            "outcome": {
+              "success_message": "Closed work item",
+              "failure_message": "Could not close work item"
+            },
+            "optimistic_update": {
+              "mode": "patch_resource"
+            }
           }
         },
         {
@@ -168,8 +483,15 @@
           "binding": {
             "transport": "graphql",
             "operation": "deleteWorkItem",
-            "result_path": "deleteWorkItem",
-            "variables": { "name": "$resource.name" }
+            "variables": {
+              "name": {
+                "kind": "resource",
+                "path": "name"
+              }
+            },
+            "result": {
+              "path": "deleteWorkItem"
+            }
           },
           "interaction": {
             "confirmation": {
@@ -179,8 +501,13 @@
               "cancel_label": "Cancel",
               "destructive": true
             },
-            "outcome": { "success_message": "Deleted work item", "failure_message": "Could not delete work item" },
-            "optimistic_update": { "mode": "remove_resource" }
+            "outcome": {
+              "success_message": "Deleted work item",
+              "failure_message": "Could not delete work item"
+            },
+            "optimistic_update": {
+              "mode": "remove_resource"
+            }
           }
         }
       ],
@@ -190,10 +517,18 @@
         "page_token_param": "page_token",
         "next_page_token_path": "workItems.nextPageToken",
         "order_by": [
-          { "field": "updated_at", "direction": "desc" },
-          { "field": "name", "direction": "asc" }
+          {
+            "field": "updated_at",
+            "direction": "desc"
+          },
+          {
+            "field": "name",
+            "direction": "asc"
+          }
         ],
-        "unique_key_fields": ["name"]
+        "unique_key_fields": [
+          "name"
+        ]
       }
     }
   ],
@@ -202,43 +537,101 @@
       "route": "/work-items",
       "title": "Work Items",
       "layout": "crud_list",
-      "navigation": { "group": "Work", "order": 1 },
+      "navigation": {
+        "group": "Work",
+        "order": 1
+      },
       "data_bindings": [
         {
           "name": "rows",
           "query": {
             "transport": "graphql",
             "operation": "workItems",
-            "result_path": "workItems.workItems",
             "variables": {
-              "page_size": "$page.page_size",
-              "page_token": "$page.page_token",
-              "filter": "$filters"
+              "page_size": {
+                "kind": "page",
+                "path": "page_size"
+              },
+              "page_token": {
+                "kind": "page",
+                "path": "page_token"
+              },
+              "filter": {
+                "kind": "filters"
+              }
+            },
+            "result": {
+              "path": "workItems.workItems"
             }
           }
         }
       ],
       "components": [
-        { "id": "filters", "kind": "filter_bar", "props": { "collection": "workItems" } },
+        {
+          "id": "filters",
+          "kind": "filter_bar",
+          "collection": "workItems"
+        },
         {
           "id": "table",
           "kind": "table",
-          "data_ref": "rows",
-          "props": {
-            "table": {
-              "collection": "workItems",
-              "columns": [
-                { "id": "title", "field": "title", "label": "Title", "sortable": false, "visible": true },
-                { "id": "state", "field": "state", "label": "State", "sortable": false, "visible": true },
-                { "id": "priority", "field": "priority", "label": "Priority", "sortable": false, "visible": true },
-                { "id": "owner", "field": "owner", "label": "Owner", "sortable": false, "visible": true },
-                { "id": "updated", "field": "updated_at", "label": "Updated", "sortable": true, "visible": true }
-              ],
-              "selection": { "mode": "multiple", "required_for_bulk_actions": true },
-              "row_navigation": "/work-items/{name}",
-              "row_actions": ["open", "update", "close", "delete"],
-              "bulk_actions": ["close", "delete"]
-            }
+          "data": {
+            "binding": "rows"
+          },
+          "table": {
+            "collection": "workItems",
+            "columns": [
+              {
+                "id": "title",
+                "field": "title",
+                "label": "Title",
+                "sortable": false,
+                "visible": true
+              },
+              {
+                "id": "state",
+                "field": "state",
+                "label": "State",
+                "sortable": false,
+                "visible": true
+              },
+              {
+                "id": "priority",
+                "field": "priority",
+                "label": "Priority",
+                "sortable": false,
+                "visible": true
+              },
+              {
+                "id": "owner",
+                "field": "owner",
+                "label": "Owner",
+                "sortable": false,
+                "visible": true
+              },
+              {
+                "id": "updated",
+                "field": "updated_at",
+                "label": "Updated",
+                "sortable": true,
+                "visible": true
+              }
+            ],
+            "selection": {
+              "mode": "multiple",
+              "required_for_bulk_actions": true
+            },
+            "row_navigation": "/work-items/{name}",
+            "row_actions": [
+              "open",
+              "update",
+              "close",
+              "delete"
+            ],
+            "bulk_actions": [
+              "close",
+              "delete"
+            ]
           }
         }
       ]
@@ -247,15 +640,25 @@
       "route": "/work-items/:name",
       "title": "Work Item Detail",
       "layout": "detail_page",
-      "navigation": { "group": "Work", "order": 2 },
+      "navigation": {
+        "group": "Work",
+        "order": 2
+      },
       "data_bindings": [
         {
           "name": "item",
           "query": {
             "transport": "graphql",
             "operation": "workItem",
-            "result_path": "workItem",
-            "variables": { "name": "$route.name" }
+            "variables": {
+              "name": {
+                "kind": "route",
+                "path": "name"
+              }
+            },
+            "result": {
+              "path": "workItem"
+            }
           }
         },
         {
@@ -263,8 +666,15 @@
           "query": {
             "transport": "graphql",
             "operation": "relatedWorkItems",
-            "result_path": "relatedWorkItems.workItems",
-            "variables": { "name": "$route.name" }
+            "variables": {
+              "name": {
+                "kind": "route",
+                "path": "name"
+              }
+            },
+            "result": {
+              "path": "relatedWorkItems.workItems"
+            }
           }
         },
         {
@@ -272,8 +682,15 @@
           "query": {
             "transport": "graphql",
             "operation": "workItemTimeline",
-            "result_path": "workItemTimeline.events",
-            "variables": { "name": "$route.name" }
+            "variables": {
+              "name": {
+                "kind": "route",
+                "path": "name"
+              }
+            },
+            "result": {
+              "path": "workItemTimeline.events"
+            }
           }
         }
       ],
@@ -281,46 +698,108 @@
         {
           "id": "header",
           "kind": "detail_header",
-          "data_ref": "item",
-          "props": {
-            "detail": {
-              "collection": "workItems",
-              "title_field": "title",
-              "subtitle_field": "owner",
-              "status_field": "state",
-              "actions": ["open", "update", "close", "delete"],
-              "sections": [
-                { "id": "overview", "label": "Overview", "fields": ["title", "state", "priority", "owner", "blocked"] },
-                { "id": "planning", "label": "Planning", "fields": ["estimate_points", "updated_at"] }
-              ],
-              "tabs": [
-                { "id": "summary", "label": "Summary", "sections": ["overview", "planning"] },
-                { "id": "related", "label": "Related", "related": ["relatedItems"] },
-                { "id": "activity", "label": "Activity" }
-              ],
-              "related": [
-                {
-                  "id": "relatedItems",
-                  "label": "Related Items",
+          "data": {
+            "binding": "item"
+          },
+          "detail": {
+            "collection": "workItems",
+            "title_field": "title",
+            "subtitle_field": "owner",
+            "status_field": "state",
+            "actions": [
+              "open",
+              "update",
+              "close",
+              "delete"
+            ],
+            "sections": [
+              {
+                "id": "overview",
+                "label": "Overview",
+                "fields": [
+                  "title",
+                  "state",
+                  "priority",
+                  "owner",
+                  "blocked"
+                ]
+              },
+              {
+                "id": "planning",
+                "label": "Planning",
+                "fields": [
+                  "estimate_points",
+                  "updated_at"
+                ]
+              }
+            ],
+            "tabs": [
+              {
+                "id": "summary",
+                "label": "Summary",
+                "sections": [
+                  "overview",
+                  "planning"
+                ]
+              },
+              {
+                "id": "related",
+                "label": "Related",
+                "related": [
+                  "relatedItems"
+                ]
+              },
+              {
+                "id": "activity",
+                "label": "Activity"
+              }
+            ],
+            "related": [
+              {
+                "id": "relatedItems",
+                "label": "Related Items",
+                "collection": "workItems",
+                "table": {
                   "collection": "workItems",
-                  "data_ref": "relatedItems",
-                  "table": {
-                    "collection": "workItems",
-                    "columns": [
-                      { "id": "title", "field": "title", "label": "Title", "sortable": false, "visible": true },
-                      { "id": "state", "field": "state", "label": "State", "sortable": false, "visible": true },
-                      { "id": "updated", "field": "updated_at", "label": "Updated", "sortable": true, "visible": true }
-                    ],
-                    "row_navigation": "/work-items/{name}",
-                    "row_actions": ["open"]
-                  }
+                  "columns": [
+                    {
+                      "id": "title",
+                      "field": "title",
+                      "label": "Title",
+                      "sortable": false,
+                      "visible": true
+                    },
+                    {
+                      "id": "state",
+                      "field": "state",
+                      "label": "State",
+                      "sortable": false,
+                      "visible": true
+                    },
+                    {
+                      "id": "updated",
+                      "field": "updated_at",
+                      "label": "Updated",
+                      "sortable": true,
+                      "visible": true
+                    }
+                  ],
+                  "row_navigation": "/work-items/{name}",
+                  "row_actions": [
+                    "open"
+                  ]
+                },
+                "data": {
+                  "binding": "relatedItems"
                 }
-              ],
-              "timeline": {
-                "data_ref": "timeline",
-                "title_field": "title",
-                "time_field": "updated_at",
-                "description_field": "state"
+              }
+            ],
+            "timeline": {
+              "title_field": "title",
+              "time_field": "updated_at",
+              "description_field": "state",
+              "data": {
+                "binding": "timeline"
               }
             }
           }
@@ -328,14 +807,21 @@
         {
           "id": "payload",
           "kind": "table",
-          "data_ref": "item.payload",
-          "props": {
-            "table": {
-              "collection": "workItems",
-              "columns": [
-                { "id": "payload", "field": "payload", "label": "Payload", "sortable": false, "visible": true }
-              ]
-            }
+          "data": {
+            "binding": "item",
+            "path": "payload"
+          },
+          "table": {
+            "collection": "workItems",
+            "columns": [
+              {
+                "id": "payload",
+                "field": "payload",
+                "label": "Payload",
+                "sortable": false,
+                "visible": true
+              }
+            ]
           }
         }
       ]
@@ -344,15 +830,20 @@
       "route": "/work-items/dashboard",
       "title": "Work Item Dashboard",
       "layout": "dashboard",
-      "navigation": { "group": "Work", "order": 3 },
+      "navigation": {
+        "group": "Work",
+        "order": 3
+      },
       "data_bindings": [
         {
           "name": "stats",
           "query": {
             "transport": "graphql",
             "operation": "workItemStats",
-            "result_path": "workItemStats",
-            "variables": {}
+            "variables": {},
+            "result": {
+              "path": "workItemStats"
+            }
           }
         },
         {
@@ -360,8 +851,10 @@
           "query": {
             "transport": "graphql",
             "operation": "workItemSeries",
-            "result_path": "workItemSeries.points",
-            "variables": {}
+            "variables": {},
+            "result": {
+              "path": "workItemSeries.points"
+            }
           }
         }
       ],
@@ -369,27 +862,46 @@
         {
           "id": "kpis",
           "kind": "metric_row",
-          "data_ref": "stats",
-          "props": {
-            "metrics": [
-              { "id": "open", "label": "Open", "value_path": "open_count", "format": "number" },
-              { "id": "blocked", "label": "Blocked", "value_path": "blocked_count", "format": "number" },
-              { "id": "done_rate", "label": "Done Rate", "value_path": "done_rate", "format": "percent" }
-            ]
-          }
+          "data": {
+            "binding": "stats"
+          },
+          "metrics": [
+            {
+              "id": "open",
+              "label": "Open",
+              "value_path": "open_count",
+              "format": "number"
+            },
+            {
+              "id": "blocked",
+              "label": "Blocked",
+              "value_path": "blocked_count",
+              "format": "number"
+            },
+            {
+              "id": "done_rate",
+              "label": "Done Rate",
+              "value_path": "done_rate",
+              "format": "percent"
+            }
+          ]
         },
         {
           "id": "throughput",
           "kind": "chart",
-          "data_ref": "series",
-          "props": {
-            "chart": {
-              "kind": "bar",
-              "title": "Throughput",
-              "encoding": { "x": "day", "y": "completed_count", "color": "priority" },
-              "height": 280,
-              "stack": true
-            }
+          "data": {
+            "binding": "series"
+          },
+          "chart": {
+            "kind": "bar",
+            "title": "Throughput",
+            "encoding": {
+              "x": "day",
+              "y": "completed_count",
+              "color": "priority"
+            },
+            "height": 280,
+            "stack": true
           }
         }
       ]

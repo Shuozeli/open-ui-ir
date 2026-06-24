@@ -13,6 +13,7 @@ import type {
   DetailSpec,
   TableSpec,
   UiRouteSpec,
+  BindingValue,
 } from "@open-ui-ir/protocol";
 import { PROTOCOL_VERSION } from "@open-ui-ir/protocol";
 
@@ -115,6 +116,9 @@ export function validateDocument(document: OpenUiDocument): Diagnostic[] {
     requireLayout(document, route, index, diagnostics);
     requireComponents(document, route, index, diagnostics);
     requireRouteBindings(route, index, diagnostics);
+    route.data_bindings.forEach((binding, bindingIndex) => {
+      requireQueryBinding(binding.query, `/routes/${index}/data_bindings/${bindingIndex}/query`, diagnostics);
+    });
     requireComponentReferences(collections, route, index, diagnostics);
   });
 
@@ -133,11 +137,51 @@ export function validateDocument(document: OpenUiDocument): Diagnostic[] {
     requireActionCapabilities(document, collection, index, diagnostics);
     requireActionForms(collection, index, diagnostics);
     requireActionInteractions(collection, index, diagnostics);
+    requireQueryBinding(collection.list, `/collections/${index}/list`, diagnostics);
+    if (collection.get !== undefined) {
+      requireQueryBinding(collection.get, `/collections/${index}/get`, diagnostics);
+    }
+    collection.actions.forEach((action, actionIndex) => {
+      requireQueryBinding(action.binding, `/collections/${index}/actions/${actionIndex}/binding`, diagnostics);
+    });
     requirePaginationFields(collection, index, diagnostics);
     requireKeysetTieBreaker(collection, index, diagnostics);
   });
 
   return diagnostics;
+}
+
+function requireQueryBinding(binding: QueryBinding, path: string, diagnostics: Diagnostic[]): void {
+  if (binding.result === undefined || typeof binding.result.path !== "string" || binding.result.path.trim() === "") {
+    diagnostics.push(error("invalid_result_path", "binding result.path must be a non-empty string", `${path}/result/path`));
+  }
+
+  Object.entries(binding.variables).forEach(([name, value]) => {
+    if (!isBindingValue(value)) {
+      diagnostics.push(
+        error("invalid_binding_value", `binding variable ${name} must use a typed binding value`, `${path}/variables/${name}`),
+      );
+    }
+  });
+}
+
+function isBindingValue(value: unknown): value is BindingValue {
+  if (!value || typeof value !== "object" || !("kind" in value)) return false;
+  const binding = value as { kind?: unknown; path?: unknown };
+  switch (binding.kind) {
+    case "literal":
+      return "value" in binding;
+    case "route":
+    case "resource":
+      return typeof binding.path === "string" && binding.path.length > 0;
+    case "form":
+    case "filters":
+      return binding.path === undefined || typeof binding.path === "string";
+    case "page":
+      return binding.path === "page_size" || binding.path === "page_token";
+    default:
+      return false;
+  }
 }
 
 export function validateTargetCompatibility(document: OpenUiDocument, target: TargetManifest): Diagnostic[] {
@@ -187,7 +231,7 @@ export function validateTargetCompatibility(document: OpenUiDocument, target: Ta
           error(
             "target_unsupported_chart",
             `target ${target.name} does not support chart ${chartKind}`,
-            `/routes/${routeIndex}/components/${componentIndex}/props/chart/kind`,
+            `/routes/${routeIndex}/components/${componentIndex}/chart/kind`,
           ),
         );
       }
@@ -478,7 +522,7 @@ function requireActionForms(
 function requireUpdateMask(
   collectionIndex: number,
   actionIndex: number,
-  updateMask: { variable: string; value_path: "$form.update_mask" } | undefined,
+  updateMask: { variable: string; value: BindingValue } | undefined,
   binding: QueryBinding,
   diagnostics: Diagnostic[],
 ): void {
@@ -504,15 +548,19 @@ function requireUpdateMask(
     return;
   }
 
-  if (binding.variables[updateMask.variable] !== updateMask.value_path) {
+  if (!isFormUpdateMaskBinding(binding.variables[updateMask.variable])) {
     diagnostics.push(
       error(
         "invalid_update_mask_binding",
-        `update mask variable ${updateMask.variable} must bind ${updateMask.value_path}`,
+        `update mask variable ${updateMask.variable} must bind form.update_mask`,
         `/collections/${collectionIndex}/actions/${actionIndex}/binding/variables/${updateMask.variable}`,
       ),
     );
   }
+}
+
+function isFormUpdateMaskBinding(value: BindingValue | undefined): boolean {
+  return value?.kind === "form" && value.path === "update_mask";
 }
 
 function requireActionInteractions(
@@ -721,12 +769,12 @@ function requireComponentReferences(
 ): void {
   const bindingNames = new Set(route.data_bindings.map((binding) => binding.name));
   route.components.forEach((component, componentIndex) => {
-    if (component.data_ref !== undefined && !bindingNames.has(rootPath(component.data_ref))) {
+    if (component.data !== undefined && !bindingNames.has(component.data.binding)) {
       diagnostics.push(
         error(
           "unknown_data_ref",
-          `data_ref ${component.data_ref} does not reference a route data binding`,
-          `/routes/${routeIndex}/components/${componentIndex}/data_ref`,
+          `data binding ${component.data.binding} is not declared on the route`,
+          `/routes/${routeIndex}/components/${componentIndex}/data/binding`,
         ),
       );
     }
@@ -741,7 +789,7 @@ function requireComponentReferences(
         error(
           "unknown_collection_ref",
           `collection ${collection} is not declared`,
-          `/routes/${routeIndex}/components/${componentIndex}/props/collection`,
+          `/routes/${routeIndex}/components/${componentIndex}/collection`,
         ),
       );
     }
@@ -779,23 +827,23 @@ function requireDetailBindingReferences(
   if (detail === undefined) return;
 
   detail.related?.forEach((related, relatedIndex) => {
-    if (!bindingNames.has(rootPath(related.data_ref))) {
+    if (!bindingNames.has(related.data.binding)) {
       diagnostics.push(
         error(
           "unknown_related_data_ref",
-          `related data_ref ${related.data_ref} does not reference a route data binding`,
-          `/routes/${routeIndex}/components/${componentIndex}/props/detail/related/${relatedIndex}/data_ref`,
+          `related data binding ${related.data.binding} is not declared on the route`,
+          `/routes/${routeIndex}/components/${componentIndex}/detail/related/${relatedIndex}/data/binding`,
         ),
       );
     }
   });
 
-  if (detail.timeline !== undefined && !bindingNames.has(rootPath(detail.timeline.data_ref))) {
+  if (detail.timeline !== undefined && !bindingNames.has(detail.timeline.data.binding)) {
     diagnostics.push(
       error(
         "unknown_timeline_data_ref",
-        `timeline data_ref ${detail.timeline.data_ref} does not reference a route data binding`,
-        `/routes/${routeIndex}/components/${componentIndex}/props/detail/timeline/data_ref`,
+        `timeline data binding ${detail.timeline.data.binding} is not declared on the route`,
+        `/routes/${routeIndex}/components/${componentIndex}/detail/timeline/data/binding`,
       ),
     );
   }
@@ -812,8 +860,8 @@ function requireDetailProps(
     diagnostics.push(
       error(
         "missing_detail_props",
-        "detail_header component must include props.detail",
-        `/routes/${routeIndex}/components/${componentIndex}/props/detail`,
+        "detail_header component must include detail",
+        `/routes/${routeIndex}/components/${componentIndex}/detail`,
       ),
     );
     return;
@@ -822,8 +870,8 @@ function requireDetailProps(
     diagnostics.push(
       error(
         "missing_detail_collection",
-        "detail component must declare props.detail.collection",
-        `/routes/${routeIndex}/components/${componentIndex}/props/detail/collection`,
+        "detail component must declare detail.collection",
+        `/routes/${routeIndex}/components/${componentIndex}/detail/collection`,
       ),
     );
   }
@@ -853,7 +901,7 @@ function requireDetailContract(
         error(
           "unknown_detail_action",
           `detail action ${actionName} is not declared on collection ${collection.name}`,
-          `/routes/${routeIndex}/components/${componentIndex}/props/detail/actions/${actionIndex}`,
+          `/routes/${routeIndex}/components/${componentIndex}/detail/actions/${actionIndex}`,
         ),
       );
     }
@@ -866,7 +914,7 @@ function requireDetailContract(
         error(
           "duplicate_detail_section",
           `duplicate detail section ${section.id}`,
-          `/routes/${routeIndex}/components/${componentIndex}/props/detail/sections/${sectionIndex}/id`,
+          `/routes/${routeIndex}/components/${componentIndex}/detail/sections/${sectionIndex}/id`,
         ),
       );
     }
@@ -877,7 +925,7 @@ function requireDetailContract(
           error(
             "unknown_detail_section_field",
             `detail section field ${field} is not in collection ${collection.name}`,
-            `/routes/${routeIndex}/components/${componentIndex}/props/detail/sections/${sectionIndex}/fields/${fieldIndex}`,
+            `/routes/${routeIndex}/components/${componentIndex}/detail/sections/${sectionIndex}/fields/${fieldIndex}`,
           ),
         );
       }
@@ -891,7 +939,7 @@ function requireDetailContract(
         error(
           "duplicate_related_resource",
           `duplicate related resource ${related.id}`,
-          `/routes/${routeIndex}/components/${componentIndex}/props/detail/related/${relatedIndex}/id`,
+          `/routes/${routeIndex}/components/${componentIndex}/detail/related/${relatedIndex}/id`,
         ),
       );
     }
@@ -902,7 +950,7 @@ function requireDetailContract(
         error(
           "unknown_related_collection",
           `related collection ${related.collection} is not declared`,
-          `/routes/${routeIndex}/components/${componentIndex}/props/detail/related/${relatedIndex}/collection`,
+          `/routes/${routeIndex}/components/${componentIndex}/detail/related/${relatedIndex}/collection`,
         ),
       );
       return;
@@ -912,7 +960,7 @@ function requireDetailContract(
         error(
           "mismatched_related_table_collection",
           `related table collection ${related.table.collection} must match ${related.collection}`,
-          `/routes/${routeIndex}/components/${componentIndex}/props/detail/related/${relatedIndex}/table/collection`,
+          `/routes/${routeIndex}/components/${componentIndex}/detail/related/${relatedIndex}/table/collection`,
         ),
       );
     }
@@ -926,7 +974,7 @@ function requireDetailContract(
         error(
           "duplicate_detail_tab",
           `duplicate detail tab ${tab.id}`,
-          `/routes/${routeIndex}/components/${componentIndex}/props/detail/tabs/${tabIndex}/id`,
+          `/routes/${routeIndex}/components/${componentIndex}/detail/tabs/${tabIndex}/id`,
         ),
       );
     }
@@ -937,7 +985,7 @@ function requireDetailContract(
           error(
             "unknown_detail_tab_section",
             `tab section ${sectionId} is not declared`,
-            `/routes/${routeIndex}/components/${componentIndex}/props/detail/tabs/${tabIndex}/sections/${sectionIndex}`,
+            `/routes/${routeIndex}/components/${componentIndex}/detail/tabs/${tabIndex}/sections/${sectionIndex}`,
           ),
         );
       }
@@ -948,7 +996,7 @@ function requireDetailContract(
           error(
             "unknown_detail_tab_related",
             `tab related panel ${relatedId} is not declared`,
-            `/routes/${routeIndex}/components/${componentIndex}/props/detail/tabs/${tabIndex}/related/${relatedIndex}`,
+            `/routes/${routeIndex}/components/${componentIndex}/detail/tabs/${tabIndex}/related/${relatedIndex}`,
           ),
         );
       }
@@ -1002,7 +1050,7 @@ function requireDetailField(
       error(
         code,
         `detail field ${field} is not in collection`,
-        `/routes/${routeIndex}/components/${componentIndex}/props/detail/${pathSegment}`,
+        `/routes/${routeIndex}/components/${componentIndex}/detail/${pathSegment}`,
       ),
     );
   }
@@ -1017,7 +1065,7 @@ function requireTableProps(
   const table = tableProp(component);
   if (table === undefined) {
     diagnostics.push(
-      error("missing_table_props", "table component must include props.table", `/routes/${routeIndex}/components/${componentIndex}/props/table`),
+      error("missing_table_props", "table component must include table", `/routes/${routeIndex}/components/${componentIndex}/table`),
     );
     return;
   }
@@ -1025,8 +1073,8 @@ function requireTableProps(
     diagnostics.push(
       error(
         "missing_table_collection",
-        "table component must declare props.table.collection",
-        `/routes/${routeIndex}/components/${componentIndex}/props/table/collection`,
+        "table component must declare table.collection",
+        `/routes/${routeIndex}/components/${componentIndex}/table/collection`,
       ),
     );
   }
@@ -1035,7 +1083,7 @@ function requireTableProps(
       error(
         "missing_table_columns",
         "table component must declare at least one column",
-        `/routes/${routeIndex}/components/${componentIndex}/props/table/columns`,
+        `/routes/${routeIndex}/components/${componentIndex}/table/columns`,
       ),
     );
   }
@@ -1061,7 +1109,7 @@ function requireTableContract(
         error(
           "invalid_bulk_selection",
           "tables with bulk actions must declare multiple selection required for bulk actions",
-          `/routes/${routeIndex}/components/${componentIndex}/props/table/selection`,
+          `/routes/${routeIndex}/components/${componentIndex}/table/selection`,
         ),
       );
     }
@@ -1073,7 +1121,7 @@ function requireTableContract(
         error(
           "duplicate_table_column",
           `duplicate table column ${column.id}`,
-          `/routes/${routeIndex}/components/${componentIndex}/props/table/columns/${columnIndex}/id`,
+          `/routes/${routeIndex}/components/${componentIndex}/table/columns/${columnIndex}/id`,
         ),
       );
     }
@@ -1084,7 +1132,7 @@ function requireTableContract(
         error(
           "unknown_table_column_field",
           `table column field ${column.field} is not in collection ${collection.name}`,
-          `/routes/${routeIndex}/components/${componentIndex}/props/table/columns/${columnIndex}/field`,
+          `/routes/${routeIndex}/components/${componentIndex}/table/columns/${columnIndex}/field`,
         ),
       );
     }
@@ -1094,7 +1142,7 @@ function requireTableContract(
         error(
           "unsortable_table_column",
           `table column ${column.id} marks ${column.field} sortable but collection pagination does not order by it`,
-          `/routes/${routeIndex}/components/${componentIndex}/props/table/columns/${columnIndex}/sortable`,
+          `/routes/${routeIndex}/components/${componentIndex}/table/columns/${columnIndex}/sortable`,
         ),
       );
     }
@@ -1106,7 +1154,7 @@ function requireTableContract(
         error(
           "unknown_table_row_action",
           `row action ${actionName} is not declared on collection ${collection.name}`,
-          `/routes/${routeIndex}/components/${componentIndex}/props/table/row_actions/${actionIndex}`,
+          `/routes/${routeIndex}/components/${componentIndex}/table/row_actions/${actionIndex}`,
         ),
       );
     }
@@ -1119,7 +1167,7 @@ function requireTableContract(
         error(
           "unknown_table_bulk_action",
           `bulk action ${actionName} is not declared on collection ${collection.name}`,
-          `/routes/${routeIndex}/components/${componentIndex}/props/table/bulk_actions/${actionIndex}`,
+          `/routes/${routeIndex}/components/${componentIndex}/table/bulk_actions/${actionIndex}`,
         ),
       );
       return;
@@ -1129,7 +1177,7 @@ function requireTableContract(
         error(
           "invalid_table_bulk_action",
           `bulk action ${actionName} must be update, delete, or custom`,
-          `/routes/${routeIndex}/components/${componentIndex}/props/table/bulk_actions/${actionIndex}`,
+          `/routes/${routeIndex}/components/${componentIndex}/table/bulk_actions/${actionIndex}`,
         ),
       );
     }
@@ -1142,10 +1190,10 @@ function requireChartProps(
   componentIndex: number,
   diagnostics: Diagnostic[],
 ): void {
-  const chart = (component.props as { chart?: { kind?: unknown; encoding?: unknown } }).chart;
+  const chart = chartProp(component);
   if (!chart || typeof chart !== "object") {
     diagnostics.push(
-      error("missing_chart_props", "chart component must include props.chart", `/routes/${routeIndex}/components/${componentIndex}/props/chart`),
+      error("missing_chart_props", "chart component must include chart", `/routes/${routeIndex}/components/${componentIndex}/chart`),
     );
     return;
   }
@@ -1154,7 +1202,7 @@ function requireChartProps(
       error(
         "unsupported_chart_kind",
         `chart kind ${String(chart.kind)} is not supported`,
-        `/routes/${routeIndex}/components/${componentIndex}/props/chart/kind`,
+        `/routes/${routeIndex}/components/${componentIndex}/chart/kind`,
       ),
     );
   }
@@ -1163,7 +1211,7 @@ function requireChartProps(
       error(
         "missing_chart_encoding",
         "chart component must include a non-empty encoding",
-        `/routes/${routeIndex}/components/${componentIndex}/props/chart/encoding`,
+        `/routes/${routeIndex}/components/${componentIndex}/chart/encoding`,
       ),
     );
   }
@@ -1184,25 +1232,31 @@ function collectionProp(component: ComponentSpec): string | undefined {
   const table = tableProp(component);
   if (table !== undefined) return table.collection;
 
-  const value = (component.props as { collection?: unknown }).collection;
+  const value = (component as { collection?: unknown }).collection;
   return typeof value === "string" ? value : undefined;
 }
 
 function chartKindProp(component: ComponentSpec): string | undefined {
-  const chart = (component.props as { chart?: { kind?: unknown } }).chart;
+  const chart = chartProp(component);
   return chart && typeof chart === "object" && typeof chart.kind === "string" ? chart.kind : undefined;
 }
 
 function tableProp(component: ComponentSpec): TableSpec | undefined {
-  const table = (component.props as { table?: unknown }).table;
+  const table = (component as { table?: unknown }).table;
   if (!table || typeof table !== "object") return undefined;
   return table as TableSpec;
 }
 
 function detailProp(component: ComponentSpec): DetailSpec | undefined {
-  const detail = (component.props as { detail?: unknown }).detail;
+  const detail = (component as { detail?: unknown }).detail;
   if (!detail || typeof detail !== "object") return undefined;
   return detail as DetailSpec;
+}
+
+function chartProp(component: ComponentSpec): { kind?: unknown; encoding?: unknown } | undefined {
+  const chart = (component as { chart?: unknown }).chart;
+  if (!chart || typeof chart !== "object") return undefined;
+  return chart as { kind?: unknown; encoding?: unknown };
 }
 
 function error(code: string, message: string, path: string): Diagnostic {
