@@ -5,7 +5,8 @@ Renderer-neutral UI intermediate representation and compiler targets.
 `open-ui-ir` defines a middle layer above framework-specific UI code. Servers or
 tools emit one JSON document that describes resources, filters, actions, routes,
 layouts, and data bindings. Compiler targets turn that document into React AntD,
-React Material UI, Angular, Android, TUI models, or other renderers.
+React Mantine, React Material UI, Angular, Android, TUI models, or other
+renderers.
 
 ## Why
 
@@ -31,7 +32,7 @@ server schema / YAML / JSON / GraphQL
           |
     compiler targets
           |
- React AntD | React MUI | Angular | Android | TUI | custom renderer
+ React AntD | React Mantine | React MUI | Angular | Android | TUI | custom renderer
 ```
 
 ## Packages
@@ -41,6 +42,7 @@ server schema / YAML / JSON / GraphQL
 | `@open-ui-ir/protocol` | JSON-compatible protocol types and AIP/keyset pagination helpers |
 | `@open-ui-ir/compiler-core` | validation and target-independent compiler orchestration |
 | `@open-ui-ir/react-antd` | compiler target that emits React AntD source |
+| `@open-ui-ir/react-mantine` | compiler target that emits React Mantine source |
 | `@open-ui-ir/angular` | compiler target that emits Angular standalone component source |
 | `@open-ui-ir/tui` | compiler target that emits a terminal UI model |
 | `@open-ui-ir/cli` | command-line validation and target compilation |
@@ -52,6 +54,9 @@ Visualization support currently includes target-neutral `chart` intent with
 `line`, `bar`, `area`, `pie`, `heatmap`, `scatter`, `radar`, `rose`,
 `radial_bar`, `funnel`, `treemap`, `word_cloud`, `gauge`, and `liquid` chart
 kinds. The React AntD target lowers these to `@ant-design/charts` components.
+The React Mantine target emits Mantine source, lowering directly supported chart
+families to `@mantine/charts` and preserving the remaining chart intents as
+explicit Mantine cards for downstream adapters.
 
 See [docs/general-framework-design.md](docs/general-framework-design.md) for the
 broader compiler architecture: semantic IR, presentation IR, interaction IR,
@@ -60,6 +65,9 @@ See [docs/feature-contract.md](docs/feature-contract.md) for the current stable
 feature surface, validator guarantees, and target manifest compatibility checks.
 See [docs/ir-format.md](docs/ir-format.md) for the supported document, binding,
 field, component, filter, action, metric, and chart formats.
+See [docs/package-system.md](docs/package-system.md) for the package split that
+keeps AntD and Mantine renderer dependencies out of each other's frontend
+bundles.
 
 ## Status
 
@@ -81,6 +89,7 @@ CLI examples:
 ```bash
 pnpm --filter @open-ui-ir/cli open-ui-ir validate examples/product-catalog.ui.json
 pnpm --filter @open-ui-ir/cli open-ui-ir compile --target react-antd --out generated examples/product-catalog.ui.json
+pnpm --filter @open-ui-ir/cli open-ui-ir compile --target react-mantine --out generated examples/product-catalog.ui.json
 ```
 
 ## Demos
@@ -92,8 +101,9 @@ in CI by `@open-ui-ir/demo-suite`:
 - `all-features.ui.json` -- broader demo covering GraphQL-pushed UI/data bindings,
   keyset pagination, text/select/multi-select/date/boolean filters, get/create/
   update/delete/custom actions, i18n metadata, list/detail/dashboard routes,
-  metrics, chart grid, and line/bar/area/pie/heatmap/scatter/radar/rose/
-  radial-bar/funnel/treemap/word-cloud/gauge/liquid chart intent.
+  mobile table/detail hints, metrics, chart grid, and line/bar/area/pie/heatmap/
+  scatter/radar/rose/radial-bar/funnel/treemap/word-cloud/gauge/liquid chart
+  intent.
 - `full-crud.ui.json` -- non-domain-specific CRUD/list/detail/dashboard fixture
   used to keep contract coverage independent from the incident demo.
 

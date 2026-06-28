@@ -1148,6 +1148,8 @@ function requireTableContract(
     }
   });
 
+  requireTableMobileContract(table, fields, routeIndex, componentIndex, diagnostics);
+
   table.row_actions?.forEach((actionName, actionIndex) => {
     if (!actions.has(actionName)) {
       diagnostics.push(
@@ -1178,6 +1180,34 @@ function requireTableContract(
           "invalid_table_bulk_action",
           `bulk action ${actionName} must be update, delete, or custom`,
           `/routes/${routeIndex}/components/${componentIndex}/table/bulk_actions/${actionIndex}`,
+        ),
+      );
+    }
+  });
+}
+
+function requireTableMobileContract(
+  table: TableSpec,
+  fields: Set<string>,
+  routeIndex: number,
+  componentIndex: number,
+  diagnostics: Diagnostic[],
+): void {
+  if (table.mobile === undefined) return;
+
+  const mobileFields = [
+    { name: table.mobile.primary_field, path: "primary_field" },
+    ...(table.mobile.secondary_field !== undefined ? [{ name: table.mobile.secondary_field, path: "secondary_field" }] : []),
+    ...(table.mobile.metadata_fields ?? []).map((name, index) => ({ name, path: `metadata_fields/${index}` })),
+  ];
+
+  mobileFields.forEach((field) => {
+    if (!fields.has(field.name)) {
+      diagnostics.push(
+        error(
+          "unknown_table_mobile_field",
+          `mobile table field ${field.name} is not in collection ${table.collection}`,
+          `/routes/${routeIndex}/components/${componentIndex}/table/mobile/${field.path}`,
         ),
       );
     }

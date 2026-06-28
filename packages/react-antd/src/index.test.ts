@@ -8,6 +8,8 @@ describe("reactAntdTarget", () => {
     const output = compileDocument(exampleDocument, reactAntdTarget);
     expect(output.files[0]!.path).toBe("react-antd/products.tsx");
     expect(output.files[0]!.content).toContain("antd");
+    expect(output.files[0]!.content).toContain("open-ui-mobile-cards");
+    expect(output.files[0]!.content).toContain("row[\"title\"]");
   });
 
   it("lowers chart intent to AntV charts", () => {

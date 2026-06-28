@@ -13,6 +13,7 @@
     "@open-ui-ir/compiler-core": "workspace:*",
     "@open-ui-ir/protocol": "workspace:*",
     "@open-ui-ir/react-antd": "workspace:*",
+    "@open-ui-ir/react-mantine": "workspace:*",
     "@open-ui-ir/tui": "workspace:*"
   },
   "devDependencies": {

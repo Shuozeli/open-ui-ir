@@ -2,11 +2,8 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, isAbsolute, join, resolve } from "node:path";
 import { parseArgs } from "node:util";
-import { angularTarget } from "@open-ui-ir/angular";
 import { compileDocument, type CompilerTarget, type Diagnostic, validateDocument } from "@open-ui-ir/compiler-core";
 import type { OpenUiDocument } from "@open-ui-ir/protocol";
-import { reactAntdTarget } from "@open-ui-ir/react-antd";
-import { tuiTarget } from "@open-ui-ir/tui";
 
 export interface CliResult {
   exitCode: number;
@@ -14,11 +11,16 @@ export interface CliResult {
   stderr: string;
 }
 
-const targets = new Map<string, CompilerTarget>([
-  [reactAntdTarget.name, reactAntdTarget],
-  [angularTarget.name, angularTarget],
-  [tuiTarget.name, tuiTarget],
-]);
+type TargetName = "react-antd" | "react-mantine" | "angular" | "tui";
+
+const targetLoaders: Record<TargetName, () => Promise<CompilerTarget>> = {
+  "react-antd": async () => (await import("@open-ui-ir/react-antd")).reactAntdTarget,
+  "react-mantine": async () => (await import("@open-ui-ir/react-mantine")).reactMantineTarget,
+  angular: async () => (await import("@open-ui-ir/angular")).angularTarget,
+  tui: async () => (await import("@open-ui-ir/tui")).tuiTarget,
+};
+
+const targetNames = Object.keys(targetLoaders) as TargetName[];
 
 export async function runCli(argv: string[]): Promise<CliResult> {
   const [command, ...rest] = argv;
@@ -77,7 +79,7 @@ async function compileCommand(argv: string[]): Promise<CliResult> {
   if (positionals.length !== 1) return usage("compile requires exactly one file");
   if (values.target === undefined) return usage("compile requires --target");
 
-  const target = targets.get(values.target);
+  const target = await loadTarget(values.target);
   if (target === undefined) return usage(`unknown target: ${values.target}`);
 
   const output = compileDocument(await readDocument(positionals[0]!), target);
@@ -120,10 +122,19 @@ function formatDiagnostics(diagnostics: Array<Diagnostic & { file?: string }>): 
     .concat("\n");
 }
 
+async function loadTarget(name: string): Promise<CompilerTarget | undefined> {
+  if (!isTargetName(name)) return undefined;
+  return targetLoaders[name]();
+}
+
+function isTargetName(name: string): name is TargetName {
+  return targetNames.includes(name as TargetName);
+}
+
 function usage(error?: string): CliResult {
   const text = `Usage:
   open-ui-ir validate [--json] <file...>
-  open-ui-ir compile --target <react-antd|angular|tui> [--out <dir>] [--json] <file>
+  open-ui-ir compile --target <${targetNames.join("|")}> [--out <dir>] [--json] <file>
 `;
   return {
     exitCode: error === undefined ? 0 : 1,

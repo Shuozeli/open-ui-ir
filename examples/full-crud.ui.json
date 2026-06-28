@@ -631,7 +631,18 @@
             "bulk_actions": [
               "close",
               "delete"
-            ]
+            ],
+            "mobile": {
+              "presentation": "cards",
+              "primary_field": "title",
+              "secondary_field": "state",
+              "metadata_fields": [
+                "priority",
+                "owner",
+                "updated_at"
+              ],
+              "action_display": "menu"
+            }
           }
         }
       ]
@@ -787,7 +798,16 @@
                   "row_navigation": "/work-items/{name}",
                   "row_actions": [
                     "open"
-                  ]
+                  ],
+                  "mobile": {
+                    "presentation": "cards",
+                    "primary_field": "title",
+                    "secondary_field": "state",
+                    "metadata_fields": [
+                      "updated_at"
+                    ],
+                    "action_display": "menu"
+                  }
                 },
                 "data": {
                   "binding": "relatedItems"
@@ -801,6 +821,11 @@
               "data": {
                 "binding": "timeline"
               }
+            },
+            "mobile": {
+              "sections_presentation": "stack",
+              "related_presentation": "stack",
+              "sticky_actions": true
             }
           }
         },
@@ -821,7 +846,12 @@
                 "sortable": false,
                 "visible": true
               }
-            ]
+            ],
+            "mobile": {
+              "presentation": "cards",
+              "primary_field": "payload",
+              "action_display": "menu"
+            }
           }
         }
       ]

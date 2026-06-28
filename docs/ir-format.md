@@ -187,6 +187,7 @@ Table format fields:
 | `row_navigation` | Optional route template opened from a row. |
 | `row_actions` | Ordered action names available per selected row. |
 | `bulk_actions` | Ordered action names available for selected rows. |
+| `mobile` | Optional mobile presentation hints. |
 
 Column format:
 
@@ -201,6 +202,28 @@ Column format:
 | `align` | `start`, `center`, or `end`. |
 
 Selection modes are `none`, `single`, and `multiple`.
+
+Mobile table format:
+
+```json
+{
+  "presentation": "cards",
+  "primary_field": "title",
+  "secondary_field": "service",
+  "metadata_fields": ["severity", "created_at"],
+  "action_display": "menu"
+}
+```
+
+Mobile table fields:
+
+| Field | Purpose |
+|-------|---------|
+| `presentation` | `table` keeps the table shape; `cards` asks renderers to switch to stacked row cards on narrow screens. |
+| `primary_field` | Main card title field. |
+| `secondary_field` | Optional subtitle/status field. |
+| `metadata_fields` | Optional compact facts shown below the title. |
+| `action_display` | `inline` or `menu` hint for row actions on small screens. |
 
 ### `detail_header`
 
@@ -235,6 +258,7 @@ Detail format fields:
 | `tabs` | Optional grouping over sections and related resource ids. |
 | `related` | Optional related-resource tables. |
 | `timeline` | Optional event timeline. |
+| `mobile` | Optional mobile detail presentation hints. |
 
 Section format:
 
@@ -278,6 +302,24 @@ Timeline format:
   "description_field": "message"
 }
 ```
+
+Mobile detail format:
+
+```json
+{
+  "sections_presentation": "stack",
+  "related_presentation": "stack",
+  "sticky_actions": true
+}
+```
+
+Mobile detail fields:
+
+| Field | Purpose |
+|-------|---------|
+| `sections_presentation` | `stack` or `tabs` hint for detail sections on narrow screens. |
+| `related_presentation` | `stack` or `tabs` hint for related resources on narrow screens. |
+| `sticky_actions` | Whether primary actions should stay reachable while scrolling. |
 
 ### `metric_row`
 

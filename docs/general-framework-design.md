@@ -114,6 +114,12 @@ Domain schema / GraphQL / OpenAPI / YAML / code
   React AntD | React MUI | Angular | Android | iOS | TUI
 ```
 
+Each UI library target must live in its own package. A frontend renderer shell
+chooses one concrete package, such as `@open-ui-ir/react-antd` or
+`@open-ui-ir/react-mantine`, and installs only that package's UI library peers.
+Shared packages such as `@open-ui-ir/protocol` and `@open-ui-ir/compiler-core`
+must not import AntD, Mantine, or any other UI library.
+
 ## Layers
 
 ### 1. Semantic IR
@@ -380,7 +386,7 @@ Each target declares a capability manifest:
 interface TargetManifest {
   id: string;
   runtime: "react" | "angular" | "android" | "ios" | "tui" | "html";
-  ui_library?: "antd" | "mui" | "chakra" | "angular-material";
+  ui_library?: "antd" | "mantine" | "mui" | "chakra" | "angular-material";
   supports: {
     layouts: string[];
     components: string[];
@@ -402,6 +408,7 @@ Current packages:
 - `@open-ui-ir/protocol`
 - `@open-ui-ir/compiler-core`
 - `@open-ui-ir/react-antd`
+- `@open-ui-ir/react-mantine`
 - `@open-ui-ir/angular`
 - `@open-ui-ir/tui`
 

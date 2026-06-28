@@ -46,7 +46,7 @@ function compileRoute(title: string, components: ComponentSpec[]): string {
   const hasChart = components.some((component) => component.kind === "chart");
   return `${hasChart ? 'import { Column, Funnel, Gauge, Heatmap, Line, Liquid, Pie, Radar, RadialBar, Rose, Scatter, Treemap, WordCloud } from "@ant-design/charts";\n' : ""}import { Card, Table, Typography } from "antd";
 
-export function GeneratedPage({ rows = [], loading = false }: { rows?: unknown[]; loading?: boolean }) {
+export function GeneratedPage({ rows = [], loading = false }: { rows?: Array<Record<string, unknown>>; loading?: boolean }) {
   return (
     <div style={{ padding: 24 }}>
       <Typography.Title level={3}>${escapeText(title)}</Typography.Title>
@@ -97,8 +97,33 @@ function compileTable(component: ComponentSpec): string {
       ...(column.sortable === true ? { sorter: true } : {}),
     }));
   return `<Card size="small">
-        <Table rowKey="name" columns={${JSON.stringify(columns)}} dataSource={rows} loading={loading} pagination={false} />
+        <div className="open-ui-table-desktop">
+          <Table rowKey="name" columns={${JSON.stringify(columns)}} dataSource={rows} loading={loading} pagination={false} />
+        </div>
+        ${compileMobileCards(table)}
       </Card>`;
+}
+
+function compileMobileCards(table: TableSpec): string {
+  const mobile = table.mobile;
+  if (mobile === undefined || mobile.presentation !== "cards") return "";
+  const metadataFields = mobile.metadata_fields ?? [];
+  return `<div className="open-ui-mobile-cards">
+          {loading ? (
+            <Typography.Text type="secondary">Loading...</Typography.Text>
+          ) : rows.map((row, index) => (
+            <Card key={String(row.name ?? index)} size="small" style={{ marginBottom: 12 }}>
+              <Typography.Text strong>{String(row[${JSON.stringify(mobile.primary_field)}] ?? "")}</Typography.Text>
+              ${mobile.secondary_field !== undefined ? `<Typography.Paragraph type="secondary">{String(row[${JSON.stringify(mobile.secondary_field)}] ?? "")}</Typography.Paragraph>` : ""}
+              ${metadataFields
+                .map(
+                  (field) => `<Typography.Paragraph style={{ marginBottom: 4 }}>${escapeText(field)}: {String(row[${JSON.stringify(field)}] ?? "")}</Typography.Paragraph>`,
+                )
+                .join("\n              ")}
+            </Card>
+          ))}
+        </div>
+        <style>{\`.open-ui-mobile-cards { display: none; } @media (max-width: 768px) { .open-ui-table-desktop { display: none; } .open-ui-mobile-cards { display: block; } }\`}</style>`;
 }
 
 function compileChart(component: ComponentSpec): string {

@@ -694,7 +694,18 @@
             "bulk_actions": [
               "acknowledge",
               "delete"
-            ]
+            ],
+            "mobile": {
+              "presentation": "cards",
+              "primary_field": "title",
+              "secondary_field": "service",
+              "metadata_fields": [
+                "severity",
+                "created_at",
+                "acknowledged"
+              ],
+              "action_display": "menu"
+            }
           }
         }
       ]
@@ -850,7 +861,16 @@
                   "row_navigation": "/incidents/{name}",
                   "row_actions": [
                     "open"
-                  ]
+                  ],
+                  "mobile": {
+                    "presentation": "cards",
+                    "primary_field": "title",
+                    "secondary_field": "severity",
+                    "metadata_fields": [
+                      "created_at"
+                    ],
+                    "action_display": "menu"
+                  }
                 },
                 "data": {
                   "binding": "relatedIncidents"
@@ -864,6 +884,11 @@
               "data": {
                 "binding": "timeline"
               }
+            },
+            "mobile": {
+              "sections_presentation": "stack",
+              "related_presentation": "stack",
+              "sticky_actions": true
             }
           }
         },
@@ -884,7 +909,12 @@
                 "sortable": false,
                 "visible": true
               }
-            ]
+            ],
+            "mobile": {
+              "presentation": "cards",
+              "primary_field": "payload",
+              "action_display": "menu"
+            }
           }
         }
       ]

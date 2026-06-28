@@ -437,7 +437,20 @@
         "selection": { "$ref": "#/$defs/tableSelection" },
         "row_navigation": { "type": "string" },
         "row_actions": { "type": "array", "items": { "type": "string", "minLength": 1 } },
-        "bulk_actions": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+        "bulk_actions": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "mobile": { "$ref": "#/$defs/tableMobile" }
+      }
+    },
+    "tableMobile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["presentation", "primary_field"],
+      "properties": {
+        "presentation": { "enum": ["table", "cards"] },
+        "primary_field": { "type": "string", "minLength": 1 },
+        "secondary_field": { "type": "string", "minLength": 1 },
+        "metadata_fields": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "action_display": { "enum": ["inline", "menu"] }
       }
     },
     "tableSelection": {
@@ -476,7 +489,17 @@
         "sections": { "type": "array", "items": { "$ref": "#/$defs/detailSection" } },
         "tabs": { "type": "array", "items": { "$ref": "#/$defs/detailTab" } },
         "related": { "type": "array", "items": { "$ref": "#/$defs/relatedResource" } },
-        "timeline": { "$ref": "#/$defs/timeline" }
+        "timeline": { "$ref": "#/$defs/timeline" },
+        "mobile": { "$ref": "#/$defs/detailMobile" }
+      }
+    },
+    "detailMobile": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "sections_presentation": { "enum": ["stack", "tabs"] },
+        "related_presentation": { "enum": ["stack", "tabs"] },
+        "sticky_actions": { "type": "boolean" }
       }
     },
     "detailSection": {

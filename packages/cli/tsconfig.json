@@ -9,6 +9,7 @@
     { "path": "../protocol" },
     { "path": "../compiler-core" },
     { "path": "../react-antd" },
+    { "path": "../react-mantine" },
     { "path": "../angular" },
     { "path": "../tui" }
   ]

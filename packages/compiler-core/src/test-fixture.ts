@@ -204,7 +204,17 @@ export const exampleDocument: OpenUiDocument = {
                 "sortable": true,
                 "visible": true
               }
-            ]
+            ],
+            "mobile": {
+              "presentation": "cards",
+              "primary_field": "title",
+              "secondary_field": "category",
+              "metadata_fields": [
+                "price",
+                "updated_at"
+              ],
+              "action_display": "menu"
+            }
           }
         }
       ]

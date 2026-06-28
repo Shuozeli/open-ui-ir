@@ -3,6 +3,7 @@ import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { angularTarget } from "@open-ui-ir/angular";
 import { reactAntdTarget } from "@open-ui-ir/react-antd";
+import { reactMantineTarget } from "@open-ui-ir/react-mantine";
 import { tuiTarget } from "@open-ui-ir/tui";
 import type { ChartKind, OpenUiDocument } from "@open-ui-ir/protocol";
 import { compileDocument, validateDocument } from "@open-ui-ir/compiler-core";
@@ -20,7 +21,7 @@ describe("examples", () => {
       const document = JSON.parse(source) as OpenUiDocument;
       expect(validateDocument(document)).toEqual([]);
 
-      for (const target of [reactAntdTarget, angularTarget, tuiTarget]) {
+      for (const target of [reactAntdTarget, reactMantineTarget, angularTarget, tuiTarget]) {
         const output = compileDocument(document, target);
         expect(output.diagnostics).toEqual([]);
         expect(output.files.length).toBeGreaterThan(0);
@@ -96,6 +97,13 @@ describe("examples", () => {
     expect(tableSpecs[0]?.row_actions).toEqual(["open", "update", "acknowledge", "delete"]);
     expect(tableSpecs[0]?.bulk_actions).toEqual(["acknowledge", "delete"]);
     expect(tableSpecs[0]?.selection).toEqual({ mode: "multiple", required_for_bulk_actions: true });
+    expect(tableSpecs[0]?.mobile).toEqual({
+      presentation: "cards",
+      primary_field: "title",
+      secondary_field: "service",
+      metadata_fields: ["severity", "created_at", "acknowledged"],
+      action_display: "menu",
+    });
 
     const detailSpec = routes
       .flatMap((route) => route.components)
@@ -104,6 +112,11 @@ describe("examples", () => {
     expect(detailSpec?.tabs?.length).toBeGreaterThan(0);
     expect(detailSpec?.related?.length).toBeGreaterThan(0);
     expect(detailSpec?.timeline).toBeDefined();
+    expect(detailSpec?.mobile).toEqual({
+      sections_presentation: "stack",
+      related_presentation: "stack",
+      sticky_actions: true,
+    });
 
     const routeTransports = routes.flatMap((route) => route.data_bindings.map((binding) => binding.query.transport));
     const actionTransports = collections.flatMap((collection) => collection.actions.map((action) => action.binding.transport));
@@ -134,6 +147,68 @@ describe("examples", () => {
   });
 });
 
+describe("package boundaries", () => {
+  it("keeps UI library peers in their renderer packages only", () => {
+    // Arrange
+    const packageNames = [
+      "protocol",
+      "compiler-core",
+      "react-antd",
+      "react-mantine",
+      "angular",
+      "tui",
+      "cli",
+      "demo-suite",
+    ];
+
+    // Act
+    const packages = new Map(packageNames.map((name) => [name, readPackageJson(name)]));
+
+    // Assert
+    for (const name of ["protocol", "compiler-core", "angular", "tui", "cli", "demo-suite"]) {
+      expect(dependencyNames(packages.get(name)!).filter(isUiLibraryPackage)).toEqual([]);
+    }
+    expect(dependencyNames(packages.get("react-antd")!).filter(isMantinePackage)).toEqual([]);
+    expect(dependencyNames(packages.get("react-mantine")!).filter(isAntdPackage)).toEqual([]);
+
+    expect(Object.keys(packages.get("react-antd")!.peerDependencies ?? {})).toEqual(
+      expect.arrayContaining(["antd", "@ant-design/charts", "react"]),
+    );
+    expect(Object.keys(packages.get("react-mantine")!.peerDependencies ?? {})).toEqual(
+      expect.arrayContaining(["@mantine/core", "@mantine/charts", "react", "react-dom"]),
+    );
+  });
+});
+
 function readExample(file: string): OpenUiDocument {
   return JSON.parse(readFileSync(join(examplesDir.pathname, file), "utf8")) as OpenUiDocument;
+}
+
+interface PackageJson {
+  dependencies?: Record<string, string>;
+  devDependencies?: Record<string, string>;
+  peerDependencies?: Record<string, string>;
+}
+
+function readPackageJson(packageName: string): PackageJson {
+  return JSON.parse(readFileSync(join(examplesDir.pathname, "../packages", packageName, "package.json"), "utf8")) as PackageJson;
+}
+
+function dependencyNames(packageJson: PackageJson): string[] {
+  return Object.keys({
+    ...packageJson.dependencies,
+    ...packageJson.peerDependencies,
+  });
+}
+
+function isAntdPackage(name: string): boolean {
+  return name === "antd" || name.startsWith("@ant-design/");
+}
+
+function isMantinePackage(name: string): boolean {
+  return name.startsWith("@mantine/");
+}
+
+function isUiLibraryPackage(name: string): boolean {
+  return isAntdPackage(name) || isMantinePackage(name);
 }

@@ -406,8 +406,10 @@ function ListPage({ route, document, rows, loadingRows, filters, setFilters, sel
 
 function MobileIncidentList({ rows, loading, table, collection, selectedIncident, setSelectedIncident, setSelectedRoute, t, locale }) {
   const visibleColumns = (table?.columns ?? []).filter((column) => column.visible !== false);
-  const [primaryColumn, secondaryColumn, ...metadataColumns] = visibleColumns;
-  const metadata = metadataColumns.slice(0, 3);
+  const [fallbackPrimaryColumn, fallbackSecondaryColumn, ...fallbackMetadataColumns] = visibleColumns;
+  const primaryField = table?.mobile?.primary_field ?? fallbackPrimaryColumn?.field ?? "name";
+  const secondaryField = table?.mobile?.secondary_field ?? fallbackSecondaryColumn?.field;
+  const metadataFields = table?.mobile?.metadata_fields ?? fallbackMetadataColumns.slice(0, 3).map((column) => column.field);
   const openRoute = table?.row_navigation ?? "/incidents/:name";
   if (loading) {
     return <div className="mobileListState">{t("Loading demo UI...")}</div>;
@@ -433,14 +435,14 @@ function MobileIncidentList({ rows, loading, table, collection, selectedIncident
         >
           <span className="mobileListHeader">
             <Typography.Text strong>
-              {renderFieldValue(readPath(row, primaryColumn?.field ?? "name"), fieldSpec(collection, primaryColumn?.field), t, locale)}
+              {renderFieldValue(readPath(row, primaryField), fieldSpec(collection, primaryField), t, locale)}
             </Typography.Text>
-            {secondaryColumn ? renderFieldValue(readPath(row, secondaryColumn.field), fieldSpec(collection, secondaryColumn.field), t, locale) : null}
+            {secondaryField ? renderFieldValue(readPath(row, secondaryField), fieldSpec(collection, secondaryField), t, locale) : null}
           </span>
           <span className="mobileListMeta">
-            {metadata.map((column) => (
-              <span key={column.id}>
-                {renderFieldValue(readPath(row, column.field), fieldSpec(collection, column.field), t, locale)}
+            {metadataFields.map((field) => (
+              <span key={field}>
+                {renderFieldValue(readPath(row, field), fieldSpec(collection, field), t, locale)}
               </span>
             ))}
           </span>

@@ -90,6 +90,12 @@ describe("validateDocument", () => {
         columns: Array<{ id: string; field: string; sortable?: boolean }>;
         row_actions: string[];
         bulk_actions: string[];
+        mobile?: {
+          presentation: "cards";
+          primary_field: string;
+          secondary_field: string;
+          metadata_fields: string[];
+        };
       };
     }).table = {
       collection: "products",
@@ -99,6 +105,12 @@ describe("validateDocument", () => {
       ],
       row_actions: ["missing"],
       bulk_actions: ["missing", "open", "archive"],
+      mobile: {
+        presentation: "cards",
+        primary_field: "missing_primary",
+        secondary_field: "missing_secondary",
+        metadata_fields: ["missing_meta"],
+      },
     };
 
     expect(validateDocument(doc).map((d) => d.code)).toEqual(
@@ -110,6 +122,7 @@ describe("validateDocument", () => {
         "unknown_table_row_action",
         "unknown_table_bulk_action",
         "invalid_table_bulk_action",
+        "unknown_table_mobile_field",
       ]),
     );
   });

@@ -217,6 +217,7 @@ export interface TableSpec {
   row_navigation?: string;
   row_actions?: string[];
   bulk_actions?: string[];
+  mobile?: TableMobileSpec;
 }
 
 export interface TableSelectionSpec {
@@ -234,6 +235,14 @@ export interface TableColumnSpec {
   align?: "start" | "center" | "end";
 }
 
+export interface TableMobileSpec {
+  presentation: "table" | "cards";
+  primary_field: string;
+  secondary_field?: string;
+  metadata_fields?: string[];
+  action_display?: "inline" | "menu";
+}
+
 export interface DetailHeaderComponentProps {
   detail: DetailSpec;
 }
@@ -248,6 +257,13 @@ export interface DetailSpec {
   tabs?: DetailTabSpec[];
   related?: RelatedResourceSpec[];
   timeline?: TimelineSpec;
+  mobile?: DetailMobileSpec;
+}
+
+export interface DetailMobileSpec {
+  sections_presentation?: "stack" | "tabs";
+  related_presentation?: "stack" | "tabs";
+  sticky_actions?: boolean;
 }
 
 export interface DetailSectionSpec {

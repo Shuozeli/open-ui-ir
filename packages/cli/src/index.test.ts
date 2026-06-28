@@ -39,4 +39,20 @@ describe("open-ui-ir cli", () => {
       await rm(dir, { recursive: true, force: true });
     }
   });
+
+  it("compiles React Mantine source", async () => {
+    // Arrange
+    const dir = await mkdtemp(join(tmpdir(), "open-ui-ir-cli-"));
+
+    try {
+      // Act
+      const result = await runCli(["compile", "--target", "react-mantine", "--out", dir, productCatalog.pathname]);
+
+      // Assert
+      expect(result).toEqual({ exitCode: 0, stdout: `wrote 2 file(s) to ${dir}\n`, stderr: "" });
+      expect(await readFile(join(dir, "react-mantine/products.tsx"), "utf8")).toContain("@mantine/core");
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
 });

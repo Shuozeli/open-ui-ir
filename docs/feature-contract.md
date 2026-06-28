@@ -65,6 +65,8 @@ Table components declare a direct `table` object with:
 - optional row navigation
 - optional row actions
 - optional bulk actions
+- optional mobile presentation hints for card rendering, primary/secondary
+  fields, metadata fields, and action display
 
 Table columns bind to collection fields and declare labels, visibility,
 sortable intent, width, and alignment. Sortable columns are currently limited to
@@ -79,6 +81,8 @@ Detail header components declare a direct `detail` object with:
 - tabs that reference sections or related-resource panels
 - related-resource panels with table contracts
 - timeline intent with title, time, and optional description fields
+- mobile presentation hints for stacked/tabs sections, related resources, and
+  sticky actions
 
 ### Interaction Model
 
@@ -147,10 +151,10 @@ implementation; each renderer or runtime owns that lowering.
 - duplicate route data binding names
 - component `data.binding` references to route bindings
 - component collection references to collections
-- table objects, collection references, columns, sortable fields, row actions, and
-  bulk actions
+- table objects, collection references, columns, sortable fields, row actions,
+  bulk actions, and mobile field hints
 - detail objects, header fields, actions, sections, tabs, related-resource panels,
-  timeline fields, and nested data refs
+  timeline fields, mobile hints, and nested data refs
 - interaction lifecycle for submit behavior, outcomes, destructive
   confirmations, optimistic updates, and bulk-action selection policy
 - chart props, chart kind, and non-empty chart encoding
@@ -193,7 +197,7 @@ in `@open-ui-ir/demo-suite`.
 `@open-ui-ir/cli` exposes the current contract checks and compiler targets:
 
 - `open-ui-ir validate [--json] <file...>`
-- `open-ui-ir compile --target <react-antd|angular|tui> [--out <dir>] [--json] <file>`
+- `open-ui-ir compile --target <react-antd|react-mantine|angular|tui> [--out <dir>] [--json] <file>`
 
 Validation returns a non-zero exit code when diagnostics are present. Compile
 also validates target compatibility before writing files.
