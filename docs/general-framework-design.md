@@ -111,7 +111,7 @@ Domain schema / GraphQL / OpenAPI / YAML / code
                  |
        target lowering adapters
                  |
-  React AntD | React MUI | Angular | Android | iOS | TUI
+  React AntD | React Mantine | React MUI | Angular | Android | iOS | TUI
 ```
 
 Each UI library target must live in its own package. A frontend renderer shell
@@ -495,7 +495,8 @@ stable tie-breaker such as `name`.
 Visualization is a presentation intent, not a dependency on a specific charting
 library. The protocol should describe:
 
-- chart kind: line, bar, area, pie, heatmap, scatter
+- chart kind: line, bar, area, pie, heatmap, scatter, radar, rose,
+  radial_bar, funnel, treemap, word_cloud, gauge, liquid
 - encodings: x, y, value, category, color, size
 - data binding
 - title and sizing hints
@@ -504,7 +505,9 @@ library. The protocol should describe:
 Target adapters decide how to render this:
 
 - React AntD -> `@ant-design/charts`
-- React MUI -> a MUI-compatible chart library or adapter
+- React Mantine -> `@mantine/charts` where supported, explicit chart intent
+  cards otherwise
+- React MUI -> future MUI-compatible chart library or adapter
 - Angular -> Angular chart adapter
 - Android -> Compose chart target
 - TUI -> compact ASCII/sparkline/summary model
@@ -523,10 +526,22 @@ The validator should fail documents that:
 
 ## Roadmap
 
+Completed baseline:
+
+- Target manifests and target capability validation.
+- CLI validation and compilation.
+- React AntD and React Mantine compiler targets.
+- Package split that keeps AntD and Mantine frontend dependency graphs separate.
+- Non-domain-specific fixtures and all-features fixture coverage.
+- Responsive mobile hints for table/detail presentation.
+
+Next work:
+
 1. Split current `@open-ui-ir/protocol` into semantic/presentation/interaction
    modules while keeping the existing export surface stable.
-2. Add target manifests and target capability validation.
-3. Add React MUI as the second React UI-library target.
-4. Add CLI: `open-ui-ir validate`, `open-ui-ir compile --target react-antd`.
+2. Add runtime renderer conformance tests for pushed UI documents.
+3. Add GraphQL/OpenAPI introspection input that can generate initial IR
+   documents.
+4. Add React MUI or React Chakra as another UI-library target using the same
+   package boundary rules.
 5. Add Android target model with a generated Compose skeleton.
-6. Add a non-domain-specific fixture set that exercises every stable IR feature.

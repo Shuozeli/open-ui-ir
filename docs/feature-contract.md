@@ -180,6 +180,18 @@ against the target manifest when one is present. Targets may still compile with
 diagnostics, but callers can now distinguish document contract errors from
 target capability gaps before rendering or code generation.
 
+Current compiler targets:
+
+| Target | Package | Notes |
+|--------|---------|-------|
+| `react-antd` | `@open-ui-ir/react-antd` | Emits AntD TSX and lowers charts to `@ant-design/charts`. |
+| `react-mantine` | `@open-ui-ir/react-mantine` | Emits Mantine TSX, lowers supported charts to `@mantine/charts`, and preserves unsupported chart intents as explicit cards. |
+| `angular` | `@open-ui-ir/angular` | Emits Angular standalone component source. |
+| `tui` | `@open-ui-ir/tui` | Emits a terminal screen model. |
+
+The React targets also emit responsive mobile card fallback when a table declares
+`table.mobile.presentation: "cards"`.
+
 ## Fixture Policy
 
 The `examples/` directory is contract coverage, not just demo data:
@@ -206,5 +218,6 @@ also validates target compatibility before writing files.
 
 The next contract additions should happen in this order:
 
-1. GraphQL/OpenAPI introspection input that can generate initial IR documents.
-2. Runtime renderer conformance tests for pushed UI documents.
+1. Runtime renderer conformance tests for pushed UI documents.
+2. GraphQL/OpenAPI introspection input that can generate initial IR documents.
+3. Native mobile target modeling after the responsive mobile hints stabilize.

@@ -15,6 +15,15 @@ an Ant Design frontend should not import Mantine packages.
 | Other targets | `@open-ui-ir/angular`, `@open-ui-ir/tui` | Own only their target-specific peers. |
 | Tools | `@open-ui-ir/cli`, `@open-ui-ir/demo-suite` | May aggregate targets because they are not shipped as frontend renderer bundles. |
 
+## Current Target Matrix
+
+| Target | Package | Emits | UI Library Loaded By Frontend |
+|--------|---------|-------|-------------------------------|
+| `react-antd` | `@open-ui-ir/react-antd` | React TSX | AntD and AntV charts only. |
+| `react-mantine` | `@open-ui-ir/react-mantine` | React TSX | Mantine core and charts only. |
+| `angular` | `@open-ui-ir/angular` | Angular standalone component source | Angular core only. |
+| `tui` | `@open-ui-ir/tui` | JSON terminal screen model | No browser UI library. |
+
 ## Frontend Rule
 
 Frontend applications should depend on exactly one concrete renderer package for
@@ -61,6 +70,19 @@ react-antd` dynamically imports only `@open-ui-ir/react-antd`.
 
 This keeps command startup and future bundled CLI builds from eagerly loading
 every target adapter.
+
+## Boundary Tests
+
+`@open-ui-ir/demo-suite` checks package boundaries in addition to fixture
+compilation:
+
+- shared packages such as `protocol`, `compiler-core`, `cli`, and `demo-suite`
+  must not declare AntD or Mantine UI libraries
+- `react-antd` must not declare Mantine packages
+- `react-mantine` must not declare AntD packages
+- AntD and Mantine UI libraries must stay in renderer `peerDependencies`
+
+This makes dependency isolation a tested contract, not just a convention.
 
 ## Adding a New UI Package
 

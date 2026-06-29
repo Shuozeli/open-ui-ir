@@ -58,22 +58,22 @@ The React Mantine target emits Mantine source, lowering directly supported chart
 families to `@mantine/charts` and preserving the remaining chart intents as
 explicit Mantine cards for downstream adapters.
 
-See [docs/general-framework-design.md](docs/general-framework-design.md) for the
-broader compiler architecture: semantic IR, presentation IR, interaction IR,
-data-binding IR, and target lowering for multiple frameworks and UI libraries.
-See [docs/feature-contract.md](docs/feature-contract.md) for the current stable
-feature surface, validator guarantees, and target manifest compatibility checks.
-See [docs/ir-format.md](docs/ir-format.md) for the supported document, binding,
-field, component, filter, action, metric, and chart formats.
-See [docs/package-system.md](docs/package-system.md) for the package split that
-keeps AntD and Mantine renderer dependencies out of each other's frontend
-bundles.
+## Docs
+
+| Document | Purpose |
+|----------|---------|
+| [docs/architecture.md](docs/architecture.md) | Current architecture, package boundaries, target lowering, pagination, visualization, and mobile rules. |
+| [docs/ir-format.md](docs/ir-format.md) | Supported document, binding, field, component, filter, action, metric, chart, and mobile formats. |
+| [docs/feature-contract.md](docs/feature-contract.md) | Stable feature surface, validator guarantees, target manifests, and fixture policy. |
+| [docs/package-system.md](docs/package-system.md) | Multi-package rules that keep AntD and Mantine renderer dependencies out of each other's frontend bundles. |
+| [docs/general-framework-design.md](docs/general-framework-design.md) | Longer-term semantic/presentation/interaction/data-binding IR design. |
 
 ## Status
 
-Early extraction from production server-driven UI work. The protocol is useful
-for design and compiler experiments; renderer targets intentionally emit simple,
-auditable outputs first.
+Early extraction from production server-driven UI work. The protocol, schema,
+validator, CLI, examples, React AntD target, React Mantine target, Angular
+target, and TUI target are usable for design and compiler experiments. Renderer
+targets intentionally emit simple, auditable outputs first.
 
 ## Development
 
