@@ -12,12 +12,13 @@ describe("protocol helpers", () => {
   it("ships a machine-readable JSON schema for the v1 wire format", () => {
     const schema = JSON.parse(readFileSync(new URL("../../../schemas/open-ui-ir.v1.schema.json", import.meta.url), "utf8")) as {
       $id?: string;
-      $defs?: { component?: { oneOf?: unknown[] }; bindingValue?: { oneOf?: unknown[] } };
+      $defs?: { component?: { oneOf?: unknown[] }; bindingValue?: { oneOf?: unknown[] }; authRequirement?: { oneOf?: unknown[] } };
     };
 
     expect(schema.$id).toContain("open-ui-ir.v1.schema.json");
     expect(schema.$defs?.component?.oneOf?.length).toBe(6);
     expect(schema.$defs?.bindingValue?.oneOf?.length).toBe(4);
+    expect(schema.$defs?.authRequirement?.oneOf?.length).toBe(5);
   });
 
   it("builds AIP resource names", () => {

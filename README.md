@@ -63,6 +63,7 @@ explicit Mantine cards for downstream adapters.
 | Document | Purpose |
 |----------|---------|
 | [docs/architecture.md](docs/architecture.md) | Current architecture, package boundaries, target lowering, pagination, visualization, and mobile rules. |
+| [docs/auth-design.md](docs/auth-design.md) | Authorization requirement model, placement, runtime evaluation, validator rules, and alpha implementation scope. |
 | [docs/ir-format.md](docs/ir-format.md) | Supported document, binding, field, component, filter, action, metric, chart, and mobile formats. |
 | [docs/feature-contract.md](docs/feature-contract.md) | Stable feature surface, validator guarantees, target manifests, and fixture policy. |
 | [docs/package-system.md](docs/package-system.md) | Multi-package rules that keep AntD and Mantine renderer dependencies out of each other's frontend bundles. |

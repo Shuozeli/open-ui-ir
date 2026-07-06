@@ -1,5 +1,14 @@
 import type { CompileContext, CompileOutput, CompilerTarget, TargetManifest } from "@open-ui-ir/compiler-core";
-import type { ChartKind, ComponentSpec, DetailSpec, TableSpec } from "@open-ui-ir/protocol";
+import type {
+  ActionSpec,
+  AuthRequirement,
+  ChartKind,
+  ComponentSpec,
+  DetailSpec,
+  ResourceCollectionSpec,
+  TableSpec,
+  UiRouteSpec,
+} from "@open-ui-ir/protocol";
 
 export const reactMantineManifest: TargetManifest = {
   name: "react-mantine",
@@ -36,30 +45,73 @@ export const reactMantineTarget: CompilerTarget = {
       diagnostics: [],
       files: context.document.routes.map((route) => ({
         path: routeToFile(route.route),
-        content: compileRoute(route.title, route.components),
+        content: compileRoute(route, context.document.collections),
       })),
     };
   },
 };
 
-function compileRoute(title: string, components: ComponentSpec[]): string {
-  const hasMantineChart = components.some(
+function compileRoute(route: UiRouteSpec, collections: ResourceCollectionSpec[]): string {
+  const hasMantineChart = route.components.some(
     (component) => component.kind === "chart" && mantineChartComponent(readChart(component).kind) !== undefined,
   );
+  const routeRequirement = route.auth?.requirement;
+  const deniedMessage = route.auth?.denied_message ?? "You do not have access to this page.";
   return `${hasMantineChart ? 'import { AreaChart, BarChart, LineChart, PieChart, RadarChart, ScatterChart } from "@mantine/charts";\n' : ""}import { Badge, Card, Group, SimpleGrid, Stack, Table, Text, Title } from "@mantine/core";
 
-export function GeneratedPage({ rows = [], loading = false }: { rows?: Array<Record<string, unknown>>; loading?: boolean }) {
+type OpenUiAuthRequirement =
+  | { kind: "public" }
+  | { kind: "authenticated" }
+  | { kind: "permission"; permission: string }
+  | { kind: "role"; role: string }
+  | { kind: "all"; requirements: OpenUiAuthRequirement[] }
+  | { kind: "any"; requirements: OpenUiAuthRequirement[] };
+
+interface OpenUiAuthContext {
+  subject: string;
+  authenticated: boolean;
+  permissions: string[];
+  roles?: string[];
+}
+
+const anonymousAuthContext: OpenUiAuthContext = {
+  subject: "anonymous",
+  authenticated: false,
+  permissions: [],
+};
+
+function can(requirement: OpenUiAuthRequirement | undefined, context: OpenUiAuthContext): boolean {
+  if (requirement === undefined) return true;
+  if (requirement.kind === "public") return true;
+  if (requirement.kind === "authenticated") return context.authenticated;
+  if (requirement.kind === "permission") return context.permissions.includes(requirement.permission);
+  if (requirement.kind === "role") return context.roles?.includes(requirement.role) ?? false;
+  if (requirement.kind === "all") return requirement.requirements.every((child) => can(child, context));
+  return requirement.requirements.some((child) => can(child, context));
+}
+
+export function GeneratedPage({ rows = [], loading = false, authContext = anonymousAuthContext }: { rows?: Array<Record<string, unknown>>; loading?: boolean; authContext?: OpenUiAuthContext }) {
+  if (!can(${JSON.stringify(routeRequirement)}, authContext)) {
+    return (
+      <Stack p="lg" gap="sm">
+        <Title order={3}>Access denied</Title>
+        <Text c="dimmed">${escapeText(deniedMessage)}</Text>
+        ${route.auth?.fallback !== undefined ? `<Text component="a" href="${escapeAttribute(route.auth.fallback)}">Continue</Text>` : ""}
+      </Stack>
+    );
+  }
+
   return (
     <Stack p="lg" gap="md">
-      <Title order={3}>${escapeText(title)}</Title>
-      ${components.map(compileComponent).join("\n      ")}
+      <Title order={3}>${escapeText(route.title)}</Title>
+      ${route.components.map((component) => compileComponent(component, collections)).join("\n      ")}
     </Stack>
   );
 }
 `;
 }
 
-function compileComponent(component: ComponentSpec): string {
+function compileComponent(component: ComponentSpec, collections: ResourceCollectionSpec[]): string {
   if (component.kind === "chart") {
     return compileChart(component);
   }
@@ -67,10 +119,10 @@ function compileComponent(component: ComponentSpec): string {
     return compileMetricRow(component);
   }
   if (component.kind === "table") {
-    return compileTable(component);
+    return compileTable(component, collections);
   }
   if (component.kind === "detail_header") {
-    return compileDetailHeader(component);
+    return compileDetailHeader(component, collections);
   }
   if (component.kind === "filter_bar") {
     return `<Card withBorder>
@@ -82,55 +134,74 @@ function compileComponent(component: ComponentSpec): string {
       </Card>`;
 }
 
-function compileTable(component: ComponentSpec): string {
+function compileTable(component: ComponentSpec, collections: ResourceCollectionSpec[]): string {
   const table = readTable(component);
+  const fieldAuth = fieldAuthMap(collections, table.collection);
   const columns = table.columns.filter((column) => column.visible !== false);
+  const columnSpecs = columns.map((column) => ({
+    id: column.id,
+    field: column.field,
+    label: column.label ?? column.field,
+    ...(fieldAuth.get(column.field) !== undefined ? { auth: fieldAuth.get(column.field) } : {}),
+  }));
   return `<Card withBorder>
         <div className="open-ui-table-desktop">
           <Table striped highlightOnHover withTableBorder>
             <Table.Thead>
               <Table.Tr>
-                ${columns.map((column) => `<Table.Th>${escapeText(column.label ?? column.field)}</Table.Th>`).join("\n                ")}
+                {${JSON.stringify(columnSpecs)}.filter((column) => can(column.auth, authContext)).map((column) => <Table.Th key={column.id}>{column.label}</Table.Th>)}
               </Table.Tr>
             </Table.Thead>
             <Table.Tbody>
               {loading ? (
-                <Table.Tr><Table.Td colSpan={${Math.max(columns.length, 1)}}>Loading...</Table.Td></Table.Tr>
+                <Table.Tr><Table.Td colSpan={Math.max(${JSON.stringify(columnSpecs)}.filter((column) => can(column.auth, authContext)).length, 1)}>Loading...</Table.Td></Table.Tr>
               ) : rows.map((row, index) => (
                 <Table.Tr key={String(row.name ?? index)}>
-                  ${columns.map((column) => `<Table.Td>{String(row[${JSON.stringify(column.field)}] ?? "")}</Table.Td>`).join("\n                  ")}
+                  {${JSON.stringify(columnSpecs)}.filter((column) => can(column.auth, authContext)).map((column) => <Table.Td key={column.id}>{String(row[column.field] ?? "")}</Table.Td>)}
                 </Table.Tr>
               ))}
             </Table.Tbody>
           </Table>
         </div>
-        ${compileMobileCards(table)}
+        ${compileActionBar([...(table.row_actions ?? []), ...(table.bulk_actions ?? [])], table.collection, collections, "table")}
+        ${compileMobileCards(table, fieldAuth)}
       </Card>`;
 }
 
-function compileMobileCards(table: TableSpec): string {
+function compileMobileCards(table: TableSpec, fieldAuth: Map<string, AuthRequirement>): string {
   const mobile = table.mobile;
   if (mobile === undefined || mobile.presentation !== "cards") return "";
-  const metadataFields = mobile.metadata_fields ?? [];
+  const metadataFields = (mobile.metadata_fields ?? []).map((field) => ({
+    field,
+    label: field,
+    ...(fieldAuth.get(field) !== undefined ? { auth: fieldAuth.get(field) } : {}),
+  }));
+  const primaryAuth = fieldAuth.get(mobile.primary_field);
+  const secondaryAuth = mobile.secondary_field === undefined ? undefined : fieldAuth.get(mobile.secondary_field);
   return `<Stack className="open-ui-mobile-cards" gap="sm">
           {loading ? (
             <Text size="sm" c="dimmed">Loading...</Text>
           ) : rows.map((row, index) => (
             <Card key={String(row.name ?? index)} withBorder>
-              <Text fw={600}>{String(row[${JSON.stringify(mobile.primary_field)}] ?? "")}</Text>
-              ${mobile.secondary_field !== undefined ? `<Text size="sm" c="dimmed">{String(row[${JSON.stringify(mobile.secondary_field)}] ?? "")}</Text>` : ""}
-              ${metadataFields
-                .map(
-                  (field) => `<Text size="sm">${escapeText(field)}: {String(row[${JSON.stringify(field)}] ?? "")}</Text>`,
-                )
-                .join("\n              ")}
+              {can(${JSON.stringify(primaryAuth)}, authContext) ? <Text fw={600}>{String(row[${JSON.stringify(mobile.primary_field)}] ?? "")}</Text> : null}
+              ${mobile.secondary_field !== undefined ? `{can(${JSON.stringify(secondaryAuth)}, authContext) ? <Text size="sm" c="dimmed">{String(row[${JSON.stringify(mobile.secondary_field)}] ?? "")}</Text> : null}` : ""}
+              {${JSON.stringify(metadataFields)}.filter((field) => can(field.auth, authContext)).map((field) => (
+                <Text key={field.field} size="sm">{field.label}: {String(row[field.field] ?? "")}</Text>
+              ))}
             </Card>
           ))}
         </Stack>
         <style>{\`.open-ui-mobile-cards { display: none; } @media (max-width: 768px) { .open-ui-table-desktop { display: none; } .open-ui-mobile-cards { display: grid; } }\`}</style>`;
 }
 
-function compileDetailHeader(component: ComponentSpec): string {
+function fieldAuthMap(collections: ResourceCollectionSpec[], collectionName: string): Map<string, AuthRequirement> {
+  return new Map(
+    (collections.find((collection) => collection.name === collectionName)?.fields ?? [])
+      .flatMap((field) => field.auth?.read === undefined ? [] : [[field.name, field.auth.read] as const]),
+  );
+}
+
+function compileDetailHeader(component: ComponentSpec, collections: ResourceCollectionSpec[]): string {
   const detail = readDetail(component);
   const sectionLabels = detail.sections?.map((section) => section.label) ?? [];
   return `<Card withBorder>
@@ -142,7 +213,38 @@ function compileDetailHeader(component: ComponentSpec): string {
           ${detail.status_field !== undefined ? `<Badge variant="light">${escapeText(detail.status_field)}</Badge>` : ""}
         </Group>
         ${sectionLabels.length > 0 ? `<Text mt="sm" size="sm">Sections: ${escapeText(sectionLabels.join(", "))}</Text>` : ""}
+        ${compileActionBar(detail.actions ?? [], detail.collection, collections, "detail")}
       </Card>`;
+}
+
+function compileActionBar(
+  actionNames: string[],
+  collectionName: string,
+  collections: ResourceCollectionSpec[],
+  surface: string,
+): string {
+  const actionSpecs = actionSpecMap(collections, collectionName);
+  const actions = actionNames.filter((name, index, names) => names.indexOf(name) === index).map((name) => {
+    const action = actionSpecs.get(name);
+    return {
+      name,
+      label: action?.label ?? name,
+      ...(action?.auth?.invoke !== undefined ? { auth: action.auth.invoke } : {}),
+      unauthorized: action?.auth?.unauthorized ?? "hide",
+    };
+  });
+  if (actions.length === 0) return "";
+  return `<Group aria-label="${escapeAttribute(surface)} actions" gap="xs" mt="sm">
+          {${JSON.stringify(actions)}.filter((action) => can(action.auth, authContext) || action.unauthorized === "disable").map((action) => (
+            <button key={action.name} type="button" disabled={!can(action.auth, authContext)}>{action.label}</button>
+          ))}
+        </Group>`;
+}
+
+function actionSpecMap(collections: ResourceCollectionSpec[], collectionName: string): Map<string, ActionSpec> {
+  return new Map(
+    (collections.find((collection) => collection.name === collectionName)?.actions ?? []).map((action) => [action.name, action]),
+  );
 }
 
 function compileMetricRow(component: ComponentSpec): string {
@@ -262,4 +364,8 @@ function routeToFile(route: string): string {
 
 function escapeText(value: string): string {
   return value.replace(/\\/g, "\\\\").replace(/`/g, "\\`").replace(/\$/g, "\\$");
+}
+
+function escapeAttribute(value: string): string {
+  return escapeText(value).replace(/"/g, "&quot;");
 }

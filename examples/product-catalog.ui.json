@@ -77,7 +77,14 @@
           "value_type": "number",
           "renderer": "number",
           "required": false,
-          "output_only": false
+          "output_only": false,
+          "auth": {
+            "read": {
+              "kind": "permission",
+              "permission": "products.price.read"
+            },
+            "unauthorized": "hide"
+          }
         },
         {
           "name": "updated_at",
@@ -134,6 +141,12 @@
         "unique_key_fields": [
           "name"
         ]
+      },
+      "auth": {
+        "read": {
+          "kind": "permission",
+          "permission": "products.read"
+        }
       }
     }
   ],
@@ -215,7 +228,14 @@
             }
           }
         }
-      ]
+      ],
+      "auth": {
+        "requirement": {
+          "kind": "authenticated"
+        },
+        "unauthorized": "deny",
+        "denied_message": "Access denied for Products"
+      }
     },
     {
       "route": "/products/analytics",
@@ -256,7 +276,14 @@
             "height": 320
           }
         }
-      ]
+      ],
+      "auth": {
+        "requirement": {
+          "kind": "authenticated"
+        },
+        "unauthorized": "deny",
+        "denied_message": "Access denied for Product Analytics"
+      }
     }
   ]
 }

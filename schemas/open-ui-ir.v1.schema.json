@@ -60,6 +60,84 @@
         "description": { "type": "string" }
       }
     },
+    "authRequirement": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind"],
+          "properties": { "kind": { "const": "public" } }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind"],
+          "properties": { "kind": { "const": "authenticated" } }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "permission"],
+          "properties": {
+            "kind": { "const": "permission" },
+            "permission": { "type": "string", "minLength": 1 }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "role"],
+          "properties": {
+            "kind": { "const": "role" },
+            "role": { "type": "string", "minLength": 1 }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "requirements"],
+          "properties": {
+            "kind": { "enum": ["all", "any"] },
+            "requirements": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/authRequirement" } }
+          }
+        }
+      ]
+    },
+    "routeAuth": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["requirement"],
+      "properties": {
+        "requirement": { "$ref": "#/$defs/authRequirement" },
+        "fallback": { "type": "string", "minLength": 1 },
+        "denied_message": { "type": "string", "minLength": 1 },
+        "unauthorized": { "enum": ["hide", "deny"] }
+      }
+    },
+    "collectionAuth": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "read": { "$ref": "#/$defs/authRequirement" }
+      }
+    },
+    "fieldAuth": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "read": { "$ref": "#/$defs/authRequirement" },
+        "write": { "$ref": "#/$defs/authRequirement" },
+        "unauthorized": { "enum": ["hide", "redact"] }
+      }
+    },
+    "actionAuth": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "invoke": { "$ref": "#/$defs/authRequirement" },
+        "unauthorized": { "enum": ["hide", "disable"] }
+      }
+    },
     "collection": {
       "type": "object",
       "additionalProperties": false,
@@ -73,7 +151,8 @@
         "fields": { "type": "array", "items": { "$ref": "#/$defs/resourceField" } },
         "filters": { "type": "array", "items": { "$ref": "#/$defs/filter" } },
         "actions": { "type": "array", "items": { "$ref": "#/$defs/action" } },
-        "pagination": { "$ref": "#/$defs/pagination" }
+        "pagination": { "$ref": "#/$defs/pagination" },
+        "auth": { "$ref": "#/$defs/collectionAuth" }
       }
     },
     "resourceField": {
@@ -85,7 +164,8 @@
         "value_type": { "enum": ["string", "number", "boolean", "datetime", "json"] },
         "renderer": { "type": "string", "minLength": 1 },
         "required": { "type": "boolean" },
-        "output_only": { "type": "boolean" }
+        "output_only": { "type": "boolean" },
+        "auth": { "$ref": "#/$defs/fieldAuth" }
       }
     },
     "filter": {
@@ -188,7 +268,8 @@
         "method": { "$ref": "#/$defs/actionMethod" },
         "binding": { "$ref": "#/$defs/queryBinding" },
         "form": { "$ref": "#/$defs/actionForm" },
-        "interaction": { "$ref": "#/$defs/actionInteraction" }
+        "interaction": { "$ref": "#/$defs/actionInteraction" },
+        "auth": { "$ref": "#/$defs/actionAuth" }
       }
     },
     "actionForm": {
@@ -287,7 +368,8 @@
         "layout": { "$ref": "#/$defs/layoutKind" },
         "navigation": { "$ref": "#/$defs/navigation" },
         "data_bindings": { "type": "array", "items": { "$ref": "#/$defs/dataBinding" } },
-        "components": { "type": "array", "items": { "$ref": "#/$defs/component" } }
+        "components": { "type": "array", "items": { "$ref": "#/$defs/component" } },
+        "auth": { "$ref": "#/$defs/routeAuth" }
       }
     },
     "navigation": {

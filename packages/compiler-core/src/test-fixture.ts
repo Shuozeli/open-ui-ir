@@ -79,7 +79,14 @@ export const exampleDocument: OpenUiDocument = {
           "value_type": "number",
           "renderer": "number",
           "required": false,
-          "output_only": false
+          "output_only": false,
+          "auth": {
+            "read": {
+              "kind": "permission",
+              "permission": "products.price.read"
+            },
+            "unauthorized": "hide"
+          }
         },
         {
           "name": "updated_at",
@@ -136,6 +143,12 @@ export const exampleDocument: OpenUiDocument = {
         "unique_key_fields": [
           "name"
         ]
+      },
+      "auth": {
+        "read": {
+          "kind": "permission",
+          "permission": "products.read"
+        }
       }
     }
   ],
@@ -217,7 +230,14 @@ export const exampleDocument: OpenUiDocument = {
             }
           }
         }
-      ]
+      ],
+      "auth": {
+        "requirement": {
+          "kind": "authenticated"
+        },
+        "unauthorized": "deny",
+        "denied_message": "Access denied for Products"
+      }
     },
     {
       "route": "/products/analytics",
@@ -258,7 +278,14 @@ export const exampleDocument: OpenUiDocument = {
             "height": 320
           }
         }
-      ]
+      ],
+      "auth": {
+        "requirement": {
+          "kind": "authenticated"
+        },
+        "unauthorized": "deny",
+        "denied_message": "Access denied for Product Analytics"
+      }
     }
   ]
 };

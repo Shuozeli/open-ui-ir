@@ -226,7 +226,14 @@
           "value_type": "string",
           "renderer": "external_link",
           "required": false,
-          "output_only": false
+          "output_only": false,
+          "auth": {
+            "read": {
+              "kind": "permission",
+              "permission": "incidentEvents.external_url.read"
+            },
+            "unauthorized": "hide"
+          }
         },
         {
           "name": "payload",
@@ -404,6 +411,13 @@
             "optimistic_update": {
               "mode": "prepend_resource"
             }
+          },
+          "auth": {
+            "invoke": {
+              "kind": "permission",
+              "permission": "incidentEvents.create"
+            },
+            "unauthorized": "hide"
           }
         },
         {
@@ -510,6 +524,13 @@
             "optimistic_update": {
               "mode": "patch_resource"
             }
+          },
+          "auth": {
+            "invoke": {
+              "kind": "permission",
+              "permission": "incidentEvents.update"
+            },
+            "unauthorized": "hide"
           }
         },
         {
@@ -537,6 +558,13 @@
             "optimistic_update": {
               "mode": "patch_resource"
             }
+          },
+          "auth": {
+            "invoke": {
+              "kind": "permission",
+              "permission": "incidentEvents.acknowledge"
+            },
+            "unauthorized": "hide"
           }
         },
         {
@@ -571,6 +599,13 @@
             "optimistic_update": {
               "mode": "remove_resource"
             }
+          },
+          "auth": {
+            "invoke": {
+              "kind": "permission",
+              "permission": "incidentEvents.delete"
+            },
+            "unauthorized": "disable"
           }
         }
       ],
@@ -592,6 +627,12 @@
         "unique_key_fields": [
           "name"
         ]
+      },
+      "auth": {
+        "read": {
+          "kind": "permission",
+          "permission": "incidentEvents.read"
+        }
       }
     }
   ],
@@ -708,7 +749,14 @@
             }
           }
         }
-      ]
+      ],
+      "auth": {
+        "requirement": {
+          "kind": "authenticated"
+        },
+        "unauthorized": "deny",
+        "denied_message": "Access denied for Incident Events"
+      }
     },
     {
       "route": "/incidents/:name",
@@ -917,7 +965,14 @@
             }
           }
         }
-      ]
+      ],
+      "auth": {
+        "requirement": {
+          "kind": "authenticated"
+        },
+        "unauthorized": "deny",
+        "denied_message": "Access denied for Incident Detail"
+      }
     },
     {
       "route": "/incidents/dashboard",
@@ -1240,7 +1295,14 @@
             "ack-liquid"
           ]
         }
-      ]
+      ],
+      "auth": {
+        "requirement": {
+          "kind": "authenticated"
+        },
+        "unauthorized": "deny",
+        "denied_message": "Access denied for Incident Dashboard"
+      }
     }
   ]
 }

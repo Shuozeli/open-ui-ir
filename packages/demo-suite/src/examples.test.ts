@@ -83,8 +83,21 @@ describe("examples", () => {
         .flatMap((collection) => collection.actions)
         .find((action) => action.method === "delete")?.interaction?.confirmation?.destructive,
     ).toBe(true);
+    expect(collections.every((collection) => collection.auth?.read?.kind === "permission")).toBe(true);
+    expect(
+      collections
+        .flatMap((collection) => collection.fields)
+        .some((field) => field.auth?.read?.kind === "permission"),
+    ).toBe(true);
+    expect(
+      collections
+        .flatMap((collection) => collection.actions)
+        .filter((action) => action.method !== "get")
+        .every((action) => action.auth?.invoke?.kind === "permission"),
+    ).toBe(true);
 
     const routes = document.routes;
+    expect(routes.every((route) => route.auth?.requirement.kind === "authenticated")).toBe(true);
     expect(new Set(routes.map((route) => route.layout))).toEqual(new Set(["crud_list", "detail_page", "dashboard"]));
     expect(new Set(routes.flatMap((route) => route.components.map((component) => component.kind)))).toEqual(
       new Set(["filter_bar", "table", "detail_header", "metric_row", "chart", "chart_grid"]),

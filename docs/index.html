@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Open UI IR Design Docs</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f6f7f9;
+        --panel: #ffffff;
+        --text: #172033;
+        --muted: #5d6678;
+        --line: #dfe3ea;
+        --accent: #1463ff;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", sans-serif;
+      }
+
+      header {
+        border-bottom: 1px solid var(--line);
+        background: var(--panel);
+      }
+
+      .wrap {
+        width: min(1120px, calc(100% - 32px));
+        margin: 0 auto;
+      }
+
+      .top {
+        display: grid;
+        gap: 12px;
+        padding: 32px 0 24px;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 32px;
+        line-height: 1.1;
+      }
+
+      p {
+        margin: 0;
+        color: var(--muted);
+        line-height: 1.55;
+      }
+
+      main {
+        padding: 28px 0 40px;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 14px;
+      }
+
+      .doc {
+        display: grid;
+        gap: 10px;
+        min-height: 172px;
+        padding: 18px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--panel);
+        text-decoration: none;
+        color: inherit;
+      }
+
+      .doc:hover {
+        border-color: var(--accent);
+      }
+
+      .doc strong {
+        font-size: 17px;
+      }
+
+      .doc span {
+        color: var(--muted);
+        line-height: 1.45;
+      }
+
+      .primary {
+        border-color: rgba(20, 99, 255, 0.45);
+        box-shadow: 0 8px 28px rgba(20, 99, 255, 0.08);
+      }
+
+      .sectionTitle {
+        margin: 0 0 14px;
+        font-size: 14px;
+        color: var(--muted);
+        text-transform: uppercase;
+      }
+
+      @media (max-width: 640px) {
+        .wrap {
+          width: min(100% - 24px, 1120px);
+        }
+
+        h1 {
+          font-size: 26px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="wrap top">
+        <h1>Open UI IR Design Docs</h1>
+        <p>
+          Canonical Markdown docs for the Open UI IR protocol, package system,
+          renderer targets, mobile hints, and auth implementation design.
+        </p>
+      </div>
+    </header>
+    <main class="wrap">
+      <h2 class="sectionTitle">Current Work</h2>
+      <div class="grid">
+        <a class="doc primary" href="./auth-design.md">
+          <strong>Auth Design</strong>
+          <span>
+            Auth requirement model, placement, renderer behavior,
+            validator rules, and alpha implementation scope.
+          </span>
+        </a>
+        <a class="doc" href="./architecture.md">
+          <strong>Architecture</strong>
+          <span>
+            Current compiler boundary, package split, target lowering,
+            pagination, visualization, and mobile rules.
+          </span>
+        </a>
+        <a class="doc" href="./package-system.md">
+          <strong>Package System</strong>
+          <span>
+            Multi-package loading rules that keep AntD and Mantine dependency
+            graphs isolated in frontend bundles.
+          </span>
+        </a>
+        <a class="doc" href="./feature-contract.md">
+          <strong>Feature Contract</strong>
+          <span>
+            Stable IR surface, validator guarantees, target manifests, fixture
+            policy, and current compiler targets.
+          </span>
+        </a>
+        <a class="doc" href="./ir-format.md">
+          <strong>IR Format</strong>
+          <span>
+            Field-by-field description of supported document, auth, binding,
+            field, component, filter, action, metric, chart, and mobile formats.
+          </span>
+        </a>
+        <a class="doc" href="./general-framework-design.md">
+          <strong>Framework Design</strong>
+          <span>
+            Longer-term semantic, presentation, interaction, data-binding, and
+            target lowering design.
+          </span>
+        </a>
+      </div>
+    </main>
+  </body>
+</html>

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { BindingValue, QueryBinding } from "@open-ui-ir/protocol";
 import type { TargetManifest } from "./index.js";
-import { compileDocument, validateDocument, validateTargetCompatibility } from "./index.js";
+import { can, compileDocument, validateDocument, validateTargetCompatibility } from "./index.js";
 import { exampleDocument } from "./test-fixture.js";
 
 const compatibleManifest: TargetManifest = {
@@ -430,5 +430,67 @@ describe("validateDocument", () => {
     });
 
     expect(output.diagnostics.map((d) => d.code)).toContain("target_unsupported_chart");
+  });
+
+  it("validates auth metadata", () => {
+    const doc = structuredClone(exampleDocument);
+    doc.routes[0]!.auth = {
+      requirement: { kind: "any", requirements: [] },
+      unauthorized: "disable" as never,
+      fallback: "",
+      denied_message: "",
+    };
+    doc.collections[0]!.auth = {
+      read: { kind: "permission", permission: "" },
+    };
+    doc.collections[0]!.fields[0]!.auth = {
+      read: { kind: "role", role: "" },
+      unauthorized: "deny" as never,
+    };
+    doc.collections[0]!.actions = [
+      {
+        name: "archive",
+        label: "Archive",
+        method: "custom",
+        binding: graphqlBinding("archiveProduct", "archiveProduct"),
+        interaction: { outcome: { success_message: "Archived" } },
+        auth: {
+          invoke: { kind: "missing" } as never,
+          unauthorized: "redact" as never,
+        },
+      },
+    ];
+
+    expect(validateDocument(doc).map((d) => d.code)).toEqual(
+      expect.arrayContaining([
+        "empty_auth_group",
+        "invalid_auth_unauthorized",
+        "invalid_auth_fallback",
+        "invalid_auth_denied_message",
+        "invalid_auth_permission",
+        "invalid_auth_role",
+        "unsupported_auth_requirement",
+      ]),
+    );
+  });
+});
+
+describe("can", () => {
+  const context = {
+    subject: "user-1",
+    authenticated: true,
+    permissions: ["incidents.read", "incidents.delete"],
+    roles: ["admin"],
+  };
+
+  it("evaluates auth requirements", () => {
+    expect(can(undefined, context)).toBe(true);
+    expect(can({ kind: "public" }, context)).toBe(true);
+    expect(can({ kind: "authenticated" }, context)).toBe(true);
+    expect(can({ kind: "permission", permission: "incidents.read" }, context)).toBe(true);
+    expect(can({ kind: "permission", permission: "incidents.write" }, context)).toBe(false);
+    expect(can({ kind: "role", role: "admin" }, context)).toBe(true);
+    expect(can({ kind: "all", requirements: [{ kind: "authenticated" }, { kind: "role", role: "admin" }] }, context)).toBe(true);
+    expect(can({ kind: "any", requirements: [{ kind: "role", role: "viewer" }, { kind: "permission", permission: "incidents.delete" }] }, context)).toBe(true);
   });
 });

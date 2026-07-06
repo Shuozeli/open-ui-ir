@@ -23,6 +23,8 @@ components, filters, actions, metric formats, and chart encodings, see
 - Collection fields declare value type, renderer kind, required status, and
   output-only status.
 - Collections expose list/get bindings, filters, actions, and keyset pagination.
+- Routes, collections, fields, and actions may declare auth requirements for UI
+  affordance filtering.
 
 ### Presentation Model
 
@@ -123,6 +125,42 @@ The current stable form controls are:
 - `date_time`
 - `json`
 
+### Auth Model
+
+Auth metadata is part of the stable alpha surface for describing UI intent. It
+does not enforce backend security.
+
+The current requirement kinds are:
+
+- `public`
+- `authenticated`
+- `permission`
+- `role`
+- `all`
+- `any`
+
+Auth metadata can be attached to:
+
+- routes through `route.auth.requirement`, with optional `fallback`,
+  `denied_message`, and `unauthorized`
+- collections through `collection.auth.read`
+- fields through `field.auth.read`, `field.auth.write`, and `field.auth.unauthorized`
+- actions through `action.auth.invoke` and `action.auth.unauthorized`
+
+Supported unauthorized presentations are intentionally surface-specific:
+
+| Surface | Supported values |
+|---------|------------------|
+| Route | `hide`, `deny` |
+| Field | `hide`, `redact` |
+| Action | `hide`, `disable` |
+
+`@open-ui-ir/compiler-core` also exports a target-neutral `can(requirement,
+context)` helper. React AntD and React Mantine generated output accepts an
+`authContext` prop, renders direct-access denied states for route auth, filters
+table columns plus mobile card fields using field read requirements, and hides
+or disables generated action buttons using action invoke requirements.
+
 ### Data Binding Model
 
 Bindings currently support `graphql` and `rest` transport declarations. A
@@ -165,6 +203,9 @@ implementation; each renderer or runtime owns that lowering.
   field/control pairs
 - create forms covering required mutable fields
 - update form `update_mask` binding
+- auth requirement shape, including known requirement kinds, non-empty
+  permission/role strings, non-empty `all`/`any` groups, surface-specific
+  unauthorized presentations, and non-empty route fallback/denied messages
 
 These checks intentionally focus on stable contract integrity. They do not yet
 infer every transport result shape.
@@ -190,7 +231,8 @@ Current compiler targets:
 | `tui` | `@open-ui-ir/tui` | Emits a terminal screen model. |
 
 The React targets also emit responsive mobile card fallback when a table declares
-`table.mobile.presentation: "cards"`.
+`table.mobile.presentation: "cards"`, and generated pages accept an `authContext`
+prop for auth-aware route, field, and action rendering.
 
 ## Fixture Policy
 

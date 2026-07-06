@@ -30,6 +30,37 @@ export type FormControlKind = "text" | "textarea" | "number" | "checkbox" | "sel
 export type SelectionMode = "none" | "single" | "multiple";
 export type SubmitPresentation = "inline" | "modal" | "confirm";
 export type OptimisticUpdateMode = "none" | "prepend_resource" | "replace_resource" | "patch_resource" | "remove_resource";
+export type UnauthorizedPresentation = "hide" | "disable" | "redact" | "deny";
+
+export type AuthRequirement =
+  | { kind: "public" }
+  | { kind: "authenticated" }
+  | { kind: "permission"; permission: string }
+  | { kind: "role"; role: string }
+  | { kind: "all"; requirements: AuthRequirement[] }
+  | { kind: "any"; requirements: AuthRequirement[] };
+
+export interface RouteAuthPolicy {
+  requirement: AuthRequirement;
+  fallback?: string;
+  denied_message?: string;
+  unauthorized?: Extract<UnauthorizedPresentation, "hide" | "deny">;
+}
+
+export interface CollectionAuthPolicy {
+  read?: AuthRequirement;
+}
+
+export interface FieldAuthPolicy {
+  read?: AuthRequirement;
+  write?: AuthRequirement;
+  unauthorized?: Extract<UnauthorizedPresentation, "hide" | "redact">;
+}
+
+export interface ActionAuthPolicy {
+  invoke?: AuthRequirement;
+  unauthorized?: Extract<UnauthorizedPresentation, "hide" | "disable">;
+}
 
 export interface OpenUiDocument {
   protocol_version: typeof PROTOCOL_VERSION;
@@ -71,6 +102,7 @@ export interface ResourceCollectionSpec {
   filters: FilterSpec[];
   actions: ActionSpec[];
   pagination: PaginationSpec;
+  auth?: CollectionAuthPolicy;
 }
 
 export interface ResourceFieldSpec {
@@ -79,6 +111,7 @@ export interface ResourceFieldSpec {
   renderer: string;
   required: boolean;
   output_only: boolean;
+  auth?: FieldAuthPolicy;
 }
 
 export interface PaginationSpec {
@@ -153,6 +186,7 @@ export interface UiRouteSpec {
   navigation?: NavigationSpec;
   data_bindings: DataBinding[];
   components: RouteComponentSpec[];
+  auth?: RouteAuthPolicy;
 }
 
 export interface NavigationSpec {
@@ -326,6 +360,7 @@ export interface ActionSpec {
   binding: QueryBinding;
   form?: ActionFormSpec;
   interaction?: ActionInteractionSpec;
+  auth?: ActionAuthPolicy;
 }
 
 export interface ActionInteractionSpec {

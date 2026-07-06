@@ -14,6 +14,7 @@ import type {
   TableSpec,
   UiRouteSpec,
   BindingValue,
+  AuthRequirement,
 } from "@open-ui-ir/protocol";
 import { PROTOCOL_VERSION } from "@open-ui-ir/protocol";
 
@@ -59,6 +60,14 @@ export interface Diagnostic {
   path: string;
 }
 
+export interface AuthContext {
+  subject: string;
+  authenticated: boolean;
+  permissions: string[];
+  roles?: string[];
+  claims?: Record<string, unknown>;
+}
+
 export interface CompileContext {
   document: OpenUiDocument;
   diagnostics: Diagnostic[];
@@ -99,6 +108,24 @@ export function compileDocument(document: OpenUiDocument, target: CompilerTarget
   };
 }
 
+export function can(requirement: AuthRequirement | undefined, context: AuthContext): boolean {
+  if (requirement === undefined) return true;
+  switch (requirement.kind) {
+    case "public":
+      return true;
+    case "authenticated":
+      return context.authenticated;
+    case "permission":
+      return context.permissions.includes(requirement.permission);
+    case "role":
+      return context.roles?.includes(requirement.role) ?? false;
+    case "all":
+      return requirement.requirements.every((child) => can(child, context));
+    case "any":
+      return requirement.requirements.some((child) => can(child, context));
+  }
+}
+
 export function validateDocument(document: OpenUiDocument): Diagnostic[] {
   const diagnostics: Diagnostic[] = [];
   if (document.protocol_version !== PROTOCOL_VERSION) {
@@ -116,6 +143,7 @@ export function validateDocument(document: OpenUiDocument): Diagnostic[] {
     requireLayout(document, route, index, diagnostics);
     requireComponents(document, route, index, diagnostics);
     requireRouteBindings(route, index, diagnostics);
+    requireRouteAuth(route, index, diagnostics);
     route.data_bindings.forEach((binding, bindingIndex) => {
       requireQueryBinding(binding.query, `/routes/${index}/data_bindings/${bindingIndex}/query`, diagnostics);
     });
@@ -132,6 +160,7 @@ export function validateDocument(document: OpenUiDocument): Diagnostic[] {
     collectionSet.add(collection.name);
     requireResourceName(collection, index, diagnostics);
     requireFieldRenderers(document, collection, index, diagnostics);
+    requireCollectionAuth(collection, index, diagnostics);
     requireFilterCapabilities(document, collection, index, diagnostics);
     requireFilterFields(collection, index, diagnostics);
     requireActionCapabilities(document, collection, index, diagnostics);
@@ -373,6 +402,130 @@ function requireFieldRenderers(
       );
     }
   });
+}
+
+function requireRouteAuth(route: UiRouteSpec, routeIndex: number, diagnostics: Diagnostic[]): void {
+  if (route.auth === undefined) return;
+  requireAuthRequirement(route.auth.requirement, `/routes/${routeIndex}/auth/requirement`, diagnostics);
+  if (route.auth.unauthorized !== undefined && route.auth.unauthorized !== "hide" && route.auth.unauthorized !== "deny") {
+    diagnostics.push(
+      error(
+        "invalid_auth_unauthorized",
+        `route auth unauthorized presentation ${route.auth.unauthorized} is not supported`,
+        `/routes/${routeIndex}/auth/unauthorized`,
+      ),
+    );
+  }
+  if (
+    route.auth.fallback !== undefined &&
+    (typeof route.auth.fallback !== "string" || route.auth.fallback.trim() === "")
+  ) {
+    diagnostics.push(error("invalid_auth_fallback", "auth fallback must be non-empty", `/routes/${routeIndex}/auth/fallback`));
+  }
+  if (
+    route.auth.denied_message !== undefined &&
+    (typeof route.auth.denied_message !== "string" || route.auth.denied_message.trim() === "")
+  ) {
+    diagnostics.push(
+      error("invalid_auth_denied_message", "auth denied_message must be non-empty", `/routes/${routeIndex}/auth/denied_message`),
+    );
+  }
+}
+
+function requireCollectionAuth(
+  collection: ResourceCollectionSpec,
+  collectionIndex: number,
+  diagnostics: Diagnostic[],
+): void {
+  if (collection.auth?.read !== undefined) {
+    requireAuthRequirement(collection.auth.read, `/collections/${collectionIndex}/auth/read`, diagnostics);
+  }
+
+  collection.fields.forEach((field, fieldIndex) => {
+    if (field.auth?.read !== undefined) {
+      requireAuthRequirement(field.auth.read, `/collections/${collectionIndex}/fields/${fieldIndex}/auth/read`, diagnostics);
+    }
+    if (field.auth?.write !== undefined) {
+      requireAuthRequirement(field.auth.write, `/collections/${collectionIndex}/fields/${fieldIndex}/auth/write`, diagnostics);
+    }
+    if (
+      field.auth?.unauthorized !== undefined &&
+      field.auth.unauthorized !== "hide" &&
+      field.auth.unauthorized !== "redact"
+    ) {
+      diagnostics.push(
+        error(
+          "invalid_auth_unauthorized",
+          `field auth unauthorized presentation ${field.auth.unauthorized} is not supported`,
+          `/collections/${collectionIndex}/fields/${fieldIndex}/auth/unauthorized`,
+        ),
+      );
+    }
+  });
+
+  collection.actions.forEach((action, actionIndex) => {
+    if (action.auth?.invoke !== undefined) {
+      requireAuthRequirement(action.auth.invoke, `/collections/${collectionIndex}/actions/${actionIndex}/auth/invoke`, diagnostics);
+    }
+    if (
+      action.auth?.unauthorized !== undefined &&
+      action.auth.unauthorized !== "hide" &&
+      action.auth.unauthorized !== "disable"
+    ) {
+      diagnostics.push(
+        error(
+          "invalid_auth_unauthorized",
+          `action auth unauthorized presentation ${action.auth.unauthorized} is not supported`,
+          `/collections/${collectionIndex}/actions/${actionIndex}/auth/unauthorized`,
+        ),
+      );
+    }
+  });
+}
+
+function requireAuthRequirement(
+  requirement: AuthRequirement | undefined,
+  path: string,
+  diagnostics: Diagnostic[],
+): void {
+  if (requirement === undefined || typeof requirement !== "object") {
+    diagnostics.push(error("invalid_auth_requirement", "auth requirement must be an object", path));
+    return;
+  }
+
+  switch (requirement.kind) {
+    case "public":
+    case "authenticated":
+      return;
+    case "permission":
+      if (typeof requirement.permission !== "string" || requirement.permission.trim() === "") {
+        diagnostics.push(error("invalid_auth_permission", "auth permission must be non-empty", `${path}/permission`));
+      }
+      return;
+    case "role":
+      if (typeof requirement.role !== "string" || requirement.role.trim() === "") {
+        diagnostics.push(error("invalid_auth_role", "auth role must be non-empty", `${path}/role`));
+      }
+      return;
+    case "all":
+    case "any":
+      if (!Array.isArray(requirement.requirements) || requirement.requirements.length === 0) {
+        diagnostics.push(error("empty_auth_group", `${requirement.kind} auth requirement must include children`, `${path}/requirements`));
+        return;
+      }
+      requirement.requirements.forEach((child, index) => {
+        requireAuthRequirement(child, `${path}/requirements/${index}`, diagnostics);
+      });
+      return;
+    default:
+      diagnostics.push(
+        error(
+          "unsupported_auth_requirement",
+          `auth requirement kind ${String((requirement as { kind?: unknown }).kind)} is not supported`,
+          `${path}/kind`,
+        ),
+      );
+  }
 }
 
 function requireFilterCapabilities(

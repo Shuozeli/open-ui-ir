@@ -25,6 +25,10 @@ Optional i18n fields:
 | `locales` | Available locale labels. |
 | `messages` | Locale-keyed message catalog for UI chrome and enum labels. |
 
+Optional auth metadata can appear on routes, collections, fields, and actions.
+Auth metadata is UI intent only; backend services remain responsible for
+enforcing every read and mutation.
+
 ## Collection Format
 
 A collection describes a resource family. Current collections are AIP-shaped:
@@ -36,6 +40,9 @@ resources must expose a required `name` field, and list operations use
   "name": "incidentEvents",
   "resource_type": "IncidentEvent",
   "plural_field": "incident_events",
+  "auth": {
+    "read": { "kind": "permission", "permission": "incidentEvents.read" }
+  },
   "list": {
     "transport": "graphql",
     "operation": "incidentEvents",
@@ -86,6 +93,23 @@ Current renderer kinds used by examples:
 | `external_link` | URL link display. |
 | `json` | Preformatted structured JSON. |
 
+Fields can declare read/write requirements. Field `unauthorized` currently
+supports `hide` and `redact`.
+
+```json
+{
+  "name": "payload",
+  "value_type": "json",
+  "renderer": "json",
+  "required": false,
+  "output_only": true,
+  "auth": {
+    "read": { "kind": "permission", "permission": "incidentEvents.payload.read" },
+    "unauthorized": "redact"
+  }
+}
+```
+
 ## Binding Format
 
 Bindings describe where data comes from, but not how a specific client library
@@ -129,6 +153,47 @@ Example:
 
 ```json
 { "data": { "binding": "incident", "path": "events" } }
+```
+
+## Auth Format
+
+Auth requirements are recursive discriminated objects:
+
+| Requirement | Format | Meaning |
+|-------------|--------|---------|
+| `public` | `{ "kind": "public" }` | No auth requirement. |
+| `authenticated` | `{ "kind": "authenticated" }` | Requires a logged-in subject. |
+| `permission` | `{ "kind": "permission", "permission": "orders.read" }` | Requires an exact permission string. |
+| `role` | `{ "kind": "role", "role": "admin" }` | Requires an exact role string. |
+| `all` | `{ "kind": "all", "requirements": [...] }` | Every child requirement must pass. |
+| `any` | `{ "kind": "any", "requirements": [...] }` | At least one child requirement must pass. |
+
+Supported auth placement:
+
+| Surface | Field | Meaning | Unauthorized values |
+|---------|-------|---------|---------------------|
+| Route | `auth.requirement` | Page access and navigation visibility. | `hide`, `deny` |
+| Route | `auth.fallback` | Optional route used by a host renderer after denial. | n/a |
+| Route | `auth.denied_message` | Optional target-neutral denied copy. | n/a |
+| Collection | `auth.read` | Default list/get read requirement. | n/a |
+| Field | `auth.read` | Field visibility requirement. | `hide`, `redact` |
+| Field | `auth.write` | Form/editability requirement. | `hide`, `redact` |
+| Action | `auth.invoke` | Action invocation requirement. | `hide`, `disable` |
+
+Example route auth:
+
+```json
+{
+  "route": "/admin/products",
+  "title": "Admin Products",
+  "layout": "crud_list",
+  "auth": {
+    "requirement": { "kind": "permission", "permission": "products.admin" },
+    "unauthorized": "deny",
+    "fallback": "/products",
+    "denied_message": "You do not have access to product administration."
+  }
+}
 ```
 
 ## Layout Formats

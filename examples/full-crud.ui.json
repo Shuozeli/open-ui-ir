@@ -162,7 +162,14 @@
           "value_type": "json",
           "renderer": "json",
           "required": false,
-          "output_only": true
+          "output_only": true,
+          "auth": {
+            "read": {
+              "kind": "permission",
+              "permission": "workItems.payload.read"
+            },
+            "unauthorized": "redact"
+          }
         }
       ],
       "filters": [
@@ -337,6 +344,13 @@
             "optimistic_update": {
               "mode": "prepend_resource"
             }
+          },
+          "auth": {
+            "invoke": {
+              "kind": "permission",
+              "permission": "workItems.create"
+            },
+            "unauthorized": "hide"
           }
         },
         {
@@ -447,6 +461,13 @@
             "optimistic_update": {
               "mode": "patch_resource"
             }
+          },
+          "auth": {
+            "invoke": {
+              "kind": "permission",
+              "permission": "workItems.update"
+            },
+            "unauthorized": "hide"
           }
         },
         {
@@ -474,6 +495,13 @@
             "optimistic_update": {
               "mode": "patch_resource"
             }
+          },
+          "auth": {
+            "invoke": {
+              "kind": "permission",
+              "permission": "workItems.close"
+            },
+            "unauthorized": "hide"
           }
         },
         {
@@ -508,6 +536,13 @@
             "optimistic_update": {
               "mode": "remove_resource"
             }
+          },
+          "auth": {
+            "invoke": {
+              "kind": "permission",
+              "permission": "workItems.delete"
+            },
+            "unauthorized": "disable"
           }
         }
       ],
@@ -529,6 +564,12 @@
         "unique_key_fields": [
           "name"
         ]
+      },
+      "auth": {
+        "read": {
+          "kind": "permission",
+          "permission": "workItems.read"
+        }
       }
     }
   ],
@@ -645,7 +686,14 @@
             }
           }
         }
-      ]
+      ],
+      "auth": {
+        "requirement": {
+          "kind": "authenticated"
+        },
+        "unauthorized": "deny",
+        "denied_message": "Access denied for Work Items"
+      }
     },
     {
       "route": "/work-items/:name",
@@ -854,7 +902,14 @@
             }
           }
         }
-      ]
+      ],
+      "auth": {
+        "requirement": {
+          "kind": "authenticated"
+        },
+        "unauthorized": "deny",
+        "denied_message": "Access denied for Work Item Detail"
+      }
     },
     {
       "route": "/work-items/dashboard",
@@ -934,7 +989,14 @@
             "stack": true
           }
         }
-      ]
+      ],
+      "auth": {
+        "requirement": {
+          "kind": "authenticated"
+        },
+        "unauthorized": "deny",
+        "denied_message": "Access denied for Work Item Dashboard"
+      }
     }
   ]
 }
