@@ -7,7 +7,8 @@ export type ComponentKind =
   | "detail_header"
   | "metric_row"
   | "chart"
-  | "chart_grid";
+  | "chart_grid"
+  | "video";
 export type ChartKind =
   | "line"
   | "bar"
@@ -31,6 +32,7 @@ export type SelectionMode = "none" | "single" | "multiple";
 export type SubmitPresentation = "inline" | "modal" | "confirm";
 export type OptimisticUpdateMode = "none" | "prepend_resource" | "replace_resource" | "patch_resource" | "remove_resource";
 export type UnauthorizedPresentation = "hide" | "disable" | "redact" | "deny";
+export type VideoFit = "contain" | "cover";
 
 export type AuthRequirement =
   | { kind: "public" }
@@ -211,7 +213,8 @@ export type RouteComponentSpec =
   | DetailHeaderComponentSpec
   | MetricRowComponentSpec
   | ChartComponentSpec
-  | ChartGridComponentSpec;
+  | ChartGridComponentSpec
+  | VideoComponentSpec;
 
 export interface FilterBarComponentSpec extends ComponentSpec {
   kind: "filter_bar";
@@ -242,6 +245,31 @@ export interface ChartGridComponentSpec extends ComponentSpec {
   kind: "chart_grid";
   columns?: number;
   chart_refs: string[];
+}
+
+export interface VideoComponentSpec extends ComponentSpec {
+  kind: "video";
+  video: VideoSpec;
+}
+
+export interface VideoSpec {
+  src?: string;
+  sources?: VideoSourceSpec[];
+  title?: string;
+  caption?: string;
+  poster?: string;
+  controls?: boolean;
+  autoplay?: boolean;
+  muted?: boolean;
+  loop?: boolean;
+  plays_inline?: boolean;
+  fit?: VideoFit;
+  aspect_ratio?: string;
+}
+
+export interface VideoSourceSpec {
+  src: string;
+  type?: string;
 }
 
 export interface TableSpec {

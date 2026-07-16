@@ -173,7 +173,7 @@ Supported auth placement:
 | Surface | Field | Meaning | Unauthorized values |
 |---------|-------|---------|---------------------|
 | Route | `auth.requirement` | Page access and navigation visibility. | `hide`, `deny` |
-| Route | `auth.fallback` | Optional route used by a host renderer after denial. | n/a |
+| Route | `auth.fallback` | Optional safe route/path/http(s) URL shown or used by a host renderer after denial. | n/a |
 | Route | `auth.denied_message` | Optional target-neutral denied copy. | n/a |
 | Collection | `auth.read` | Default list/get read requirement. | n/a |
 | Field | `auth.read` | Field visibility requirement. | `hide`, `redact` |
@@ -458,6 +458,48 @@ Supported chart kinds:
   "chart_refs": ["incidents-by-day", "severity-share"]
 }
 ```
+
+### `video`
+
+`video` describes target-neutral playback intent. React targets lower it to a
+playable HTML `<video>` element.
+
+```json
+{
+  "id": "demo-video",
+  "kind": "video",
+  "video": {
+    "title": "Demo video",
+    "sources": [
+      { "src": "/media/open-ui-ir-demo.mp4", "type": "video/mp4" },
+      { "src": "/media/open-ui-ir-demo.webm", "type": "video/webm" }
+    ],
+    "poster": "/media/open-ui-ir-demo.jpg",
+    "caption": "Playable product walkthrough rendered from Open UI IR.",
+    "controls": true,
+    "plays_inline": true,
+    "fit": "contain",
+    "aspect_ratio": "16/9"
+  }
+}
+```
+
+Video format fields:
+
+| Field | Purpose |
+|-------|---------|
+| `src` | Optional single media URL. |
+| `sources` | Optional ordered source list with `src` and media `type`; either `src` or `sources` is required. |
+| `title` | Optional heading/title around the player. |
+| `caption` | Optional supporting text below the player. |
+| `poster` | Optional poster image URL. |
+| `controls` | Whether browser playback controls are shown; defaults to true in React targets. |
+| `autoplay` | Whether playback should start automatically. |
+| `muted` | Whether playback starts muted. |
+| `loop` | Whether playback loops. |
+| `plays_inline` | Hint for inline mobile playback; defaults to true in React targets. |
+| `fit` | `contain` or `cover` object-fit hint. |
+| `aspect_ratio` | Stable player ratio such as `16/9` or `4/3`. |
 
 ## Filter Formats
 

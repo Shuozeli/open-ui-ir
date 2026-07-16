@@ -45,7 +45,7 @@
       }
     },
     "layoutKind": { "enum": ["crud_list", "detail_page", "dashboard"] },
-    "componentKind": { "enum": ["filter_bar", "table", "detail_header", "metric_row", "chart", "chart_grid"] },
+    "componentKind": { "enum": ["filter_bar", "table", "detail_header", "metric_row", "chart", "chart_grid", "video"] },
     "filterKind": { "enum": ["text", "select", "multi_select", "date_range", "boolean"] },
     "actionMethod": { "enum": ["get", "create", "update", "delete", "custom"] },
     "chartKind": {
@@ -117,6 +117,7 @@
     "collectionAuth": {
       "type": "object",
       "additionalProperties": false,
+      "required": ["read"],
       "properties": {
         "read": { "$ref": "#/$defs/authRequirement" }
       }
@@ -124,6 +125,10 @@
     "fieldAuth": {
       "type": "object",
       "additionalProperties": false,
+      "anyOf": [
+        { "required": ["read"] },
+        { "required": ["write"] }
+      ],
       "properties": {
         "read": { "$ref": "#/$defs/authRequirement" },
         "write": { "$ref": "#/$defs/authRequirement" },
@@ -133,6 +138,7 @@
     "actionAuth": {
       "type": "object",
       "additionalProperties": false,
+      "required": ["invoke"],
       "properties": {
         "invoke": { "$ref": "#/$defs/authRequirement" },
         "unauthorized": { "enum": ["hide", "disable"] }
@@ -506,8 +512,55 @@
               }
             }
           ]
+        },
+        {
+          "allOf": [
+            { "$ref": "#/$defs/componentBase" },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["id", "kind", "video"],
+              "properties": {
+                "id": true,
+                "kind": { "const": "video" },
+                "data": true,
+                "video": { "$ref": "#/$defs/video" }
+              }
+            }
+          ]
         }
       ]
+    },
+    "video": {
+      "type": "object",
+      "additionalProperties": false,
+      "anyOf": [
+        { "required": ["src"] },
+        { "required": ["sources"] }
+      ],
+      "properties": {
+        "src": { "type": "string", "minLength": 1 },
+        "sources": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/videoSource" } },
+        "title": { "type": "string" },
+        "caption": { "type": "string" },
+        "poster": { "type": "string", "minLength": 1 },
+        "controls": { "type": "boolean" },
+        "autoplay": { "type": "boolean" },
+        "muted": { "type": "boolean" },
+        "loop": { "type": "boolean" },
+        "plays_inline": { "type": "boolean" },
+        "fit": { "enum": ["contain", "cover"] },
+        "aspect_ratio": { "type": "string", "pattern": "^\\d+(\\.\\d+)?/\\d+(\\.\\d+)?$" }
+      }
+    },
+    "videoSource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["src"],
+      "properties": {
+        "src": { "type": "string", "minLength": 1 },
+        "type": { "type": "string", "minLength": 1 }
+      }
     },
     "table": {
       "type": "object",

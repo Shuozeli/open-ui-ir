@@ -7,7 +7,7 @@ import { exampleDocument } from "./test-fixture.js";
 const compatibleManifest: TargetManifest = {
   name: "test-target",
   layouts: ["crud_list", "detail_page", "dashboard"],
-  component_kinds: ["filter_bar", "table", "detail_header", "metric_row", "chart", "chart_grid"],
+  component_kinds: ["filter_bar", "table", "detail_header", "metric_row", "chart", "chart_grid", "video"],
   field_renderers: ["text", "datetime", "number"],
   filter_kinds: ["text", "select", "multi_select", "date_range", "boolean"],
   action_methods: ["get", "create", "update", "delete", "custom"],
@@ -437,12 +437,10 @@ describe("validateDocument", () => {
     doc.routes[0]!.auth = {
       requirement: { kind: "any", requirements: [] },
       unauthorized: "disable" as never,
-      fallback: "",
+      fallback: "javascript:alert(1)",
       denied_message: "",
     };
-    doc.collections[0]!.auth = {
-      read: { kind: "permission", permission: "" },
-    };
+    doc.collections[0]!.auth = {} as never;
     doc.collections[0]!.fields[0]!.auth = {
       read: { kind: "role", role: "" },
       unauthorized: "deny" as never,
@@ -467,9 +465,40 @@ describe("validateDocument", () => {
         "invalid_auth_unauthorized",
         "invalid_auth_fallback",
         "invalid_auth_denied_message",
-        "invalid_auth_permission",
+        "invalid_auth_policy",
         "invalid_auth_role",
         "unsupported_auth_requirement",
+      ]),
+    );
+  });
+
+  it("validates video components", () => {
+    const doc = structuredClone(exampleDocument);
+    doc.capabilities.component_kinds.push("video");
+    doc.routes[0]!.components.push(
+      {
+        id: "missing-video",
+        kind: "video",
+      } as never,
+      {
+        id: "broken-video",
+        kind: "video",
+        video: {
+          sources: [{ src: "", type: "" }],
+          aspect_ratio: "wide",
+          fit: "stretch",
+        },
+      } as never,
+    );
+
+    expect(validateDocument(doc).map((d) => d.code)).toEqual(
+      expect.arrayContaining([
+        "missing_video_props",
+        "missing_video_source",
+        "invalid_video_source",
+        "invalid_video_source_type",
+        "invalid_video_aspect_ratio",
+        "invalid_video_fit",
       ]),
     );
   });

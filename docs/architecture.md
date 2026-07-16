@@ -29,11 +29,13 @@ Angular, terminal, and future native targets live at the target layer.
    - React AntD source compiler
      - emits AntD TSX
      - lowers chart intent to `@ant-design/charts`
+     - lowers video intent to playable HTML `<video>`
      - emits responsive mobile card fallback for table mobile hints
    - React Mantine source compiler
      - emits Mantine TSX
      - lowers supported chart intent to `@mantine/charts`
      - preserves unsupported chart intents as explicit Mantine cards
+     - lowers video intent to playable HTML `<video>`
      - emits responsive mobile card fallback for table mobile hints
    - Angular source compiler
    - TUI model compiler

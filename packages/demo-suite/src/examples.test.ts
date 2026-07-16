@@ -35,7 +35,7 @@ describe("examples", () => {
 
     expect(new Set(document.capabilities.layouts)).toEqual(new Set(["crud_list", "detail_page", "dashboard"]));
     expect(new Set(document.capabilities.component_kinds)).toEqual(
-      new Set(["filter_bar", "table", "detail_header", "metric_row", "chart", "chart_grid"]),
+      new Set(["filter_bar", "table", "detail_header", "metric_row", "chart", "chart_grid", "video"]),
     );
     expect(new Set(document.capabilities.filter_kinds)).toEqual(
       new Set(["text", "select", "multi_select", "date_range", "boolean"]),
@@ -100,8 +100,13 @@ describe("examples", () => {
     expect(routes.every((route) => route.auth?.requirement.kind === "authenticated")).toBe(true);
     expect(new Set(routes.map((route) => route.layout))).toEqual(new Set(["crud_list", "detail_page", "dashboard"]));
     expect(new Set(routes.flatMap((route) => route.components.map((component) => component.kind)))).toEqual(
-      new Set(["filter_bar", "table", "detail_header", "metric_row", "chart", "chart_grid"]),
+      new Set(["filter_bar", "table", "detail_header", "metric_row", "chart", "chart_grid", "video"]),
     );
+    expect(
+      routes
+        .flatMap((route) => route.components)
+        .find((component) => component.kind === "video")?.video.sources?.map((source) => source.type),
+    ).toEqual(["video/mp4", "video/webm"]);
     const tableSpecs = routes
       .flatMap((route) => route.components)
       .filter((component) => component.kind === "table")

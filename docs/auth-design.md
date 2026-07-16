@@ -4,8 +4,8 @@
 
 Open UI IR should describe authorization requirements for UI intent without
 becoming the authorization engine. The frontend renderer can use auth metadata
-to hide, disable, redirect, or explain UI affordances, but the backend remains
-the security boundary for every data operation.
+to hide, disable, link away from, or explain UI affordances, but the backend
+remains the security boundary for every data operation.
 
 ## Alpha Implementation Status
 
@@ -19,8 +19,10 @@ Implemented in the current alpha:
 - example documents with route, collection, field, and action auth metadata
 - React AntD and React Mantine generated pages that accept an `authContext` prop
   and:
-  - render a denied state for direct route access when route auth fails
-  - filter table columns/mobile card fields by field read requirements
+  - export the route plus collection read `openUiAuthRequirement`
+  - render a denied state for direct route access when route or collection read
+    auth fails
+  - filter or redact table columns/mobile card fields by field read requirements
   - hide or disable generated action buttons by action invoke requirements
 
 Not implemented yet:
@@ -125,7 +127,7 @@ Routes can declare auth requirements for page access and navigation visibility.
 Renderer behavior:
 
 - hide navigation entries when the requirement fails
-- redirect to `fallback` when present
+- show a safe fallback link when present, or let the host router redirect
 - otherwise render a denied state
 
 Backend behavior:
@@ -148,7 +150,8 @@ Collections can declare a default read requirement.
 Renderer behavior:
 
 - hide collection-backed routes or render denied states
-- avoid making list/get requests when the requirement fails
+- expose page-level requirements so host shells can avoid list/get requests when
+  the requirement fails
 
 Backend behavior:
 
@@ -273,8 +276,10 @@ That belongs to integration tests or a future policy registry.
 
 React targets:
 
-- filter routes before creating navigation
-- filter table columns and mobile metadata fields
+- export the composed route plus collection read requirement
+- filter routes before creating navigation when a host shell consumes that
+  requirement
+- filter or redact table columns and mobile metadata fields
 - filter detail sections and form fields
 - hide or disable actions based on `unauthorized`
 - render a denied state for direct route access
@@ -308,7 +313,8 @@ Generated-code targets:
 3. Add validator checks for structural auth correctness.
 4. Add target-neutral `can()` helper in compiler/runtime support code.
 5. Update React AntD and React Mantine generated output to accept an
-   `authContext` prop, render route denied states, filter field-backed
-   table/mobile affordances, and hide/disable action buttons.
+   `authContext` prop, export composed page auth requirements, render route
+   denied states, filter/redact field-backed table/mobile affordances, and
+   hide/disable action buttons.
 6. Keep all backend operation enforcement outside IR and explicitly document
    that frontend auth is UX only.

@@ -42,6 +42,7 @@ The current stable component kinds are:
 - `metric_row`
 - `chart`
 - `chart_grid`
+- `video`
 
 The current stable chart intents are:
 
@@ -85,6 +86,11 @@ Detail header components declare a direct `detail` object with:
 - timeline intent with title, time, and optional description fields
 - mobile presentation hints for stacked/tabs sections, related resources, and
   sticky actions
+
+Video components declare a direct `video` object with one `src` or one or more
+typed `sources`, optional poster/caption/title metadata, playback flags, fit,
+and aspect-ratio hints. React targets lower video components to playable HTML
+`<video>` elements.
 
 ### Interaction Model
 
@@ -157,9 +163,10 @@ Supported unauthorized presentations are intentionally surface-specific:
 
 `@open-ui-ir/compiler-core` also exports a target-neutral `can(requirement,
 context)` helper. React AntD and React Mantine generated output accepts an
-`authContext` prop, renders direct-access denied states for route auth, filters
-table columns plus mobile card fields using field read requirements, and hides
-or disables generated action buttons using action invoke requirements.
+`authContext` prop, exports the page-level `openUiAuthRequirement`, renders
+direct-access denied states for route plus collection read auth, filters or
+redacts table columns plus mobile card fields using field read requirements,
+and hides or disables generated action buttons using action invoke requirements.
 
 ### Data Binding Model
 
@@ -196,6 +203,7 @@ implementation; each renderer or runtime owns that lowering.
 - interaction lifecycle for submit behavior, outcomes, destructive
   confirmations, optimistic updates, and bulk-action selection policy
 - chart props, chart kind, and non-empty chart encoding
+- video props, non-empty source declarations, fit, and aspect-ratio hints
 - target manifests against document requirements, including layouts,
   components, field renderers, filters, actions, chart kinds, and transports
 - create/update action form schemas
@@ -205,7 +213,8 @@ implementation; each renderer or runtime owns that lowering.
 - update form `update_mask` binding
 - auth requirement shape, including known requirement kinds, non-empty
   permission/role strings, non-empty `all`/`any` groups, surface-specific
-  unauthorized presentations, and non-empty route fallback/denied messages
+  unauthorized presentations, non-empty route denied messages, safe route
+  fallback links, and non-empty auth policies
 
 These checks intentionally focus on stable contract integrity. They do not yet
 infer every transport result shape.
@@ -232,7 +241,8 @@ Current compiler targets:
 
 The React targets also emit responsive mobile card fallback when a table declares
 `table.mobile.presentation: "cards"`, and generated pages accept an `authContext`
-prop for auth-aware route, field, and action rendering.
+prop for auth-aware route, collection, field, and action rendering. React targets
+also lower `video` components to playable HTML video.
 
 ## Fixture Policy
 

@@ -16,7 +16,7 @@ describe("protocol helpers", () => {
     };
 
     expect(schema.$id).toContain("open-ui-ir.v1.schema.json");
-    expect(schema.$defs?.component?.oneOf?.length).toBe(6);
+    expect(schema.$defs?.component?.oneOf?.length).toBe(7);
     expect(schema.$defs?.bindingValue?.oneOf?.length).toBe(4);
     expect(schema.$defs?.authRequirement?.oneOf?.length).toBe(5);
   });

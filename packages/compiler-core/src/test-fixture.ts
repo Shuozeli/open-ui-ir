@@ -15,7 +15,8 @@ export const exampleDocument: OpenUiDocument = {
       "table",
       "detail_header",
       "metric_row",
-      "chart"
+      "chart",
+      "video"
     ],
     "field_renderers": [
       {
@@ -276,6 +277,31 @@ export const exampleDocument: OpenUiDocument = {
               "color": "category"
             },
             "height": 320
+          }
+        },
+        {
+          "id": "demo-video",
+          "kind": "video",
+          "video": {
+            "title": "Demo video",
+            "sources": [
+              {
+                "src": "/media/open-ui-ir-demo.mp4",
+                "type": "video/mp4"
+              },
+              {
+                "src": "/media/open-ui-ir-demo.webm",
+                "type": "video/webm"
+              }
+            ],
+            "poster": "/media/open-ui-ir-demo.jpg",
+            "caption": "Playable product walkthrough rendered from Open UI IR.",
+            "controls": true,
+            "muted": false,
+            "loop": false,
+            "plays_inline": true,
+            "fit": "contain",
+            "aspect_ratio": "16/9"
           }
         }
       ],

@@ -18,6 +18,9 @@ describe("reactMantineTarget", () => {
     expect(output.files[0]!.content).toContain("<Table");
     expect(output.files[0]!.content).toContain("authContext");
     expect(output.files[0]!.content).toContain("products.price.read");
+    expect(output.files[0]!.content).toContain("products.read");
+    expect(output.files[0]!.content).toContain("openUiAuthRequirement");
+    expect(output.files[0]!.content).toContain("authText");
     expect(output.files[0]!.content).toContain("Access denied");
     expect(output.files[0]!.content).toContain("Access denied for Products");
     expect(output.files[0]!.content).toContain("open-ui-mobile-cards");
@@ -35,6 +38,42 @@ describe("reactMantineTarget", () => {
     expect(output.files[0]!.content).toContain("products.delete");
     expect(output.files[0]!.content).toContain("unauthorized\":\"disable");
     expect(output.files[0]!.content).toContain("disabled={!can(action.auth, authContext)}");
+  });
+
+  it("emits safe denied copy and redacted field presentation", () => {
+    // Arrange
+    const document = structuredClone(exampleDocument);
+    document.routes[0]!.auth = {
+      requirement: { kind: "authenticated" },
+      denied_message: "Denied <admin> {copy}",
+    };
+    document.collections[0]!.fields.find((field) => field.name === "price")!.auth = {
+      read: { kind: "permission", permission: "products.price.read" },
+      unauthorized: "redact",
+    };
+
+    // Act
+    const output = compileDocument(document, reactMantineTarget);
+    const content = output.files[0]!.content;
+
+    // Assert
+    expect(content).toContain("{\"Denied <admin> {copy}\"}");
+    expect(content).toContain("unauthorized\":\"redact");
+    expect(content).toContain("Redacted");
+  });
+
+  it("lowers video components to playable html video", () => {
+    // Arrange
+    const document = documentWithVideo();
+
+    // Act
+    const output = compileDocument(document, reactMantineTarget);
+    const content = output.files[0]!.content;
+
+    // Assert
+    expect(content).toContain("<video");
+    expect(content).toContain("<source");
+    expect(content).toContain("video/mp4");
   });
 
   it("lowers supported chart intent to Mantine charts", () => {
@@ -78,5 +117,23 @@ function documentWithActions(): OpenUiDocument {
   if (table?.kind === "table") {
     table.table.row_actions = ["delete"];
   }
+  return document;
+}
+
+function documentWithVideo(): OpenUiDocument {
+  const document: OpenUiDocument = structuredClone(exampleDocument);
+  document.capabilities.component_kinds.push("video");
+  document.routes[0]!.components.push({
+    id: "product-demo-video",
+    kind: "video",
+    video: {
+      title: "Product demo",
+      sources: [{ src: "/media/product-demo.mp4", type: "video/mp4" }],
+      poster: "/media/product-demo.jpg",
+      caption: "Short product walkthrough",
+      controls: true,
+      aspect_ratio: "16/9",
+    },
+  });
   return document;
 }

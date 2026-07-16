@@ -143,7 +143,7 @@ export function validateDocument(document: OpenUiDocument): Diagnostic[] {
     requireLayout(document, route, index, diagnostics);
     requireComponents(document, route, index, diagnostics);
     requireRouteBindings(route, index, diagnostics);
-    requireRouteAuth(route, index, diagnostics);
+    requireRouteAuth(route, index, routeSet, diagnostics);
     route.data_bindings.forEach((binding, bindingIndex) => {
       requireQueryBinding(binding.query, `/routes/${index}/data_bindings/${bindingIndex}/query`, diagnostics);
     });
@@ -371,6 +371,9 @@ function requireComponents(
     if (component.kind === "detail_header") {
       requireDetailProps(component, routeIndex, componentIndex, diagnostics);
     }
+    if (component.kind === "video") {
+      requireVideoProps(component, routeIndex, componentIndex, diagnostics);
+    }
   }
 }
 
@@ -404,7 +407,12 @@ function requireFieldRenderers(
   });
 }
 
-function requireRouteAuth(route: UiRouteSpec, routeIndex: number, diagnostics: Diagnostic[]): void {
+function requireRouteAuth(
+  route: UiRouteSpec,
+  routeIndex: number,
+  routePaths: Set<string>,
+  diagnostics: Diagnostic[],
+): void {
   if (route.auth === undefined) return;
   requireAuthRequirement(route.auth.requirement, `/routes/${routeIndex}/auth/requirement`, diagnostics);
   if (route.auth.unauthorized !== undefined && route.auth.unauthorized !== "hide" && route.auth.unauthorized !== "deny") {
@@ -421,6 +429,14 @@ function requireRouteAuth(route: UiRouteSpec, routeIndex: number, diagnostics: D
     (typeof route.auth.fallback !== "string" || route.auth.fallback.trim() === "")
   ) {
     diagnostics.push(error("invalid_auth_fallback", "auth fallback must be non-empty", `/routes/${routeIndex}/auth/fallback`));
+  } else if (route.auth.fallback !== undefined && !isSafeFallback(route.auth.fallback, routePaths)) {
+    diagnostics.push(
+      error(
+        "invalid_auth_fallback",
+        "auth fallback must be a declared route, relative path, or http(s) URL",
+        `/routes/${routeIndex}/auth/fallback`,
+      ),
+    );
   }
   if (
     route.auth.denied_message !== undefined &&
@@ -439,6 +455,8 @@ function requireCollectionAuth(
 ): void {
   if (collection.auth?.read !== undefined) {
     requireAuthRequirement(collection.auth.read, `/collections/${collectionIndex}/auth/read`, diagnostics);
+  } else if (collection.auth !== undefined) {
+    diagnostics.push(error("invalid_auth_policy", "collection auth must include read", `/collections/${collectionIndex}/auth/read`));
   }
 
   collection.fields.forEach((field, fieldIndex) => {
@@ -457,6 +475,15 @@ function requireCollectionAuth(
         error(
           "invalid_auth_unauthorized",
           `field auth unauthorized presentation ${field.auth.unauthorized} is not supported`,
+          `/collections/${collectionIndex}/fields/${fieldIndex}/auth/unauthorized`,
+        ),
+      );
+    }
+    if (field.auth?.unauthorized !== undefined && field.auth.read === undefined && field.auth.write === undefined) {
+      diagnostics.push(
+        error(
+          "invalid_auth_policy",
+          "field auth unauthorized requires read or write requirement",
           `/collections/${collectionIndex}/fields/${fieldIndex}/auth/unauthorized`,
         ),
       );
@@ -480,7 +507,27 @@ function requireCollectionAuth(
         ),
       );
     }
+    if (action.auth?.unauthorized !== undefined && action.auth.invoke === undefined) {
+      diagnostics.push(
+        error(
+          "invalid_auth_policy",
+          "action auth unauthorized requires invoke requirement",
+          `/collections/${collectionIndex}/actions/${actionIndex}/auth/invoke`,
+        ),
+      );
+    }
   });
+}
+
+function isSafeFallback(fallback: string, routePaths: Set<string>): boolean {
+  if (routePaths.has(fallback)) return true;
+  if (fallback.startsWith("/") && !fallback.startsWith("//")) return true;
+  try {
+    const parsed = new URL(fallback);
+    return parsed.protocol === "http:" || parsed.protocol === "https:";
+  } catch {
+    return false;
+  }
 }
 
 function requireAuthRequirement(
@@ -1400,6 +1447,47 @@ function requireChartProps(
   }
 }
 
+function requireVideoProps(
+  component: ComponentSpec,
+  routeIndex: number,
+  componentIndex: number,
+  diagnostics: Diagnostic[],
+): void {
+  const video = videoProp(component);
+  const path = `/routes/${routeIndex}/components/${componentIndex}/video`;
+  if (!video || typeof video !== "object") {
+    diagnostics.push(error("missing_video_props", "video component must include video", path));
+    return;
+  }
+
+  const hasSrc = typeof video.src === "string" && video.src.trim() !== "";
+  const sources = Array.isArray(video.sources) ? video.sources : [];
+  const hasSources = sources.some((source) => typeof source.src === "string" && source.src.trim() !== "");
+  if (!hasSrc && !hasSources) {
+    diagnostics.push(error("missing_video_source", "video component must declare video.src or at least one source", `${path}/src`));
+  }
+
+  sources.forEach((source, sourceIndex) => {
+    if (typeof source.src !== "string" || source.src.trim() === "") {
+      diagnostics.push(error("invalid_video_source", "video source src must be non-empty", `${path}/sources/${sourceIndex}/src`));
+    }
+    if (source.type !== undefined && (typeof source.type !== "string" || source.type.trim() === "")) {
+      diagnostics.push(error("invalid_video_source_type", "video source type must be non-empty", `${path}/sources/${sourceIndex}/type`));
+    }
+  });
+
+  if (
+    video.aspect_ratio !== undefined &&
+    (typeof video.aspect_ratio !== "string" || !/^\d+(\.\d+)?\/\d+(\.\d+)?$/.test(video.aspect_ratio))
+  ) {
+    diagnostics.push(error("invalid_video_aspect_ratio", "video aspect_ratio must look like width/height", `${path}/aspect_ratio`));
+  }
+
+  if (video.fit !== undefined && video.fit !== "contain" && video.fit !== "cover") {
+    diagnostics.push(error("invalid_video_fit", "video fit must be contain or cover", `${path}/fit`));
+  }
+}
+
 function fieldSet(collection: ResourceCollectionSpec): Set<string> {
   return new Set(collection.fields.map((field) => field.name));
 }
@@ -1440,6 +1528,22 @@ function chartProp(component: ComponentSpec): { kind?: unknown; encoding?: unkno
   const chart = (component as { chart?: unknown }).chart;
   if (!chart || typeof chart !== "object") return undefined;
   return chart as { kind?: unknown; encoding?: unknown };
+}
+
+function videoProp(component: ComponentSpec): {
+  src?: unknown;
+  sources?: Array<{ src?: unknown; type?: unknown }>;
+  aspect_ratio?: unknown;
+  fit?: unknown;
+} | undefined {
+  const video = (component as { video?: unknown }).video;
+  if (!video || typeof video !== "object") return undefined;
+  return video as {
+    src?: unknown;
+    sources?: Array<{ src?: unknown; type?: unknown }>;
+    aspect_ratio?: unknown;
+    fit?: unknown;
+  };
 }
 
 function error(code: string, message: string, path: string): Diagnostic {

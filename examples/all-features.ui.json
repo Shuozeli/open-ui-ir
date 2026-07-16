@@ -90,7 +90,8 @@
       "detail_header",
       "metric_row",
       "chart",
-      "chart_grid"
+      "chart_grid",
+      "video"
     ],
     "field_renderers": [
       {
@@ -1294,6 +1295,31 @@
             "ack-gauge",
             "ack-liquid"
           ]
+        },
+        {
+          "id": "demo-video",
+          "kind": "video",
+          "video": {
+            "title": "Demo video",
+            "sources": [
+              {
+                "src": "/media/open-ui-ir-demo.mp4",
+                "type": "video/mp4"
+              },
+              {
+                "src": "/media/open-ui-ir-demo.webm",
+                "type": "video/webm"
+              }
+            ],
+            "poster": "/media/open-ui-ir-demo.jpg",
+            "caption": "Playable product walkthrough rendered from Open UI IR.",
+            "controls": true,
+            "muted": false,
+            "loop": false,
+            "plays_inline": true,
+            "fit": "contain",
+            "aspect_ratio": "16/9"
+          }
         }
       ],
       "auth": {

@@ -9,7 +9,7 @@ export interface TuiScreen {
 export const tuiManifest: TargetManifest = {
   name: "tui",
   layouts: ["crud_list", "detail_page", "dashboard"],
-  component_kinds: ["filter_bar", "table", "detail_header", "metric_row", "chart", "chart_grid"],
+  component_kinds: ["filter_bar", "table", "detail_header", "metric_row", "chart", "chart_grid", "video"],
   field_renderers: ["text", "badge", "datetime", "number", "external_link", "json"],
   filter_kinds: ["text", "select", "multi_select", "date_range", "boolean"],
   action_methods: ["get", "create", "update", "delete", "custom"],

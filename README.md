@@ -58,6 +58,10 @@ The React Mantine target emits Mantine source, lowering directly supported chart
 families to `@mantine/charts` and preserving the remaining chart intents as
 explicit Mantine cards for downstream adapters.
 
+Media support includes a target-neutral `video` component with HTML video
+sources, poster, caption, playback flags, fit, and aspect-ratio hints. React
+AntD and React Mantine lower this to a playable `<video>` element.
+
 ## Docs
 
 | Document | Purpose |

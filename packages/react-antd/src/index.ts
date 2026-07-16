@@ -8,12 +8,13 @@ import type {
   ResourceCollectionSpec,
   TableSpec,
   UiRouteSpec,
+  VideoSpec,
 } from "@open-ui-ir/protocol";
 
 export const reactAntdManifest: TargetManifest = {
   name: "react-antd",
   layouts: ["crud_list", "detail_page", "dashboard"],
-  component_kinds: ["filter_bar", "table", "detail_header", "metric_row", "chart", "chart_grid"],
+  component_kinds: ["filter_bar", "table", "detail_header", "metric_row", "chart", "chart_grid", "video"],
   field_renderers: ["text", "badge", "datetime", "number", "external_link", "json"],
   filter_kinds: ["text", "select", "multi_select", "date_range", "boolean"],
   action_methods: ["get", "create", "update", "delete", "custom"],
@@ -53,7 +54,10 @@ export const reactAntdTarget: CompilerTarget = {
 
 function compileRoute(route: UiRouteSpec, collections: ResourceCollectionSpec[]): string {
   const hasChart = route.components.some((component) => component.kind === "chart");
-  const routeRequirement = route.auth?.requirement;
+  const routeRequirement = combineRequirements([
+    route.auth?.requirement,
+    ...collectionRequirementsForRoute(route, collections),
+  ]);
   const deniedMessage = route.auth?.denied_message ?? "You do not have access to this page.";
   return `${hasChart ? 'import { Column, Funnel, Gauge, Heatmap, Line, Liquid, Pie, Radar, RadialBar, Rose, Scatter, Treemap, WordCloud } from "@ant-design/charts";\n' : ""}import { Card, Table, Typography } from "antd";
 
@@ -88,13 +92,25 @@ function can(requirement: OpenUiAuthRequirement | undefined, context: OpenUiAuth
   return requirement.requirements.some((child) => can(child, context));
 }
 
+function shouldRenderAuthSurface(requirement: OpenUiAuthRequirement | undefined, unauthorized: string | undefined, context: OpenUiAuthContext): boolean {
+  return can(requirement, context) || unauthorized === "redact" || unauthorized === "disable";
+}
+
+function authText(value: unknown, requirement: OpenUiAuthRequirement | undefined, unauthorized: string | undefined, context: OpenUiAuthContext): string {
+  if (can(requirement, context)) return String(value ?? "");
+  if (unauthorized === "redact") return "Redacted";
+  return "";
+}
+
+export const openUiAuthRequirement: OpenUiAuthRequirement | undefined = ${JSON.stringify(routeRequirement)};
+
 export function GeneratedPage({ rows = [], loading = false, authContext = anonymousAuthContext }: { rows?: Array<Record<string, unknown>>; loading?: boolean; authContext?: OpenUiAuthContext }) {
-  if (!can(${JSON.stringify(routeRequirement)}, authContext)) {
+  if (!can(openUiAuthRequirement, authContext)) {
     return (
       <div style={{ padding: 24 }}>
         <Typography.Title level={3}>Access denied</Typography.Title>
-        <Typography.Paragraph type="secondary">${escapeText(deniedMessage)}</Typography.Paragraph>
-        ${route.auth?.fallback !== undefined ? `<Typography.Link href="${escapeAttribute(route.auth.fallback)}">Continue</Typography.Link>` : ""}
+        <Typography.Paragraph type="secondary">{${JSON.stringify(deniedMessage)}}</Typography.Paragraph>
+        ${route.auth?.fallback !== undefined ? `<Typography.Link href={${JSON.stringify(route.auth.fallback)}}>Continue</Typography.Link>` : ""}
       </div>
     );
   }
@@ -112,6 +128,9 @@ export function GeneratedPage({ rows = [], loading = false, authContext = anonym
 function compileComponent(component: ComponentSpec, collections: ResourceCollectionSpec[]): string {
   if (component.kind === "chart") {
     return compileChart(component);
+  }
+  if (component.kind === "video") {
+    return compileVideo(component);
   }
   if (component.kind === "table") {
     return compileTable(component, collections);
@@ -141,7 +160,7 @@ function compileTable(component: ComponentSpec, collections: ResourceCollectionS
   const columns = table.columns
     .filter((column) => column.visible !== false)
     .map((column) => ({
-      ...(fieldAuth.get(column.field) !== undefined ? { auth: fieldAuth.get(column.field) } : {}),
+      ...fieldAuth.get(column.field),
       column: {
         title: column.label ?? column.field,
         dataIndex: column.field,
@@ -153,32 +172,32 @@ function compileTable(component: ComponentSpec, collections: ResourceCollectionS
     }));
   return `<Card size="small">
         <div className="open-ui-table-desktop">
-          <Table rowKey="name" columns={${JSON.stringify(columns)}.filter((entry) => can(entry.auth, authContext)).map((entry) => entry.column)} dataSource={rows} loading={loading} pagination={false} />
+          <Table rowKey="name" columns={${JSON.stringify(columns)}.filter((entry) => shouldRenderAuthSurface(entry.auth, entry.unauthorized, authContext)).map((entry) => ({ ...entry.column, render: (value: unknown) => authText(value, entry.auth, entry.unauthorized, authContext) }))} dataSource={rows} loading={loading} pagination={false} />
         </div>
         ${compileActionBar([...(table.row_actions ?? []), ...(table.bulk_actions ?? [])], table.collection, collections, "table")}
         ${compileMobileCards(table, fieldAuth)}
       </Card>`;
 }
 
-function compileMobileCards(table: TableSpec, fieldAuth: Map<string, AuthRequirement>): string {
+function compileMobileCards(table: TableSpec, fieldAuth: Map<string, FieldReadAuth>): string {
   const mobile = table.mobile;
   if (mobile === undefined || mobile.presentation !== "cards") return "";
   const metadataFields = (mobile.metadata_fields ?? []).map((field) => ({
     field,
     label: field,
-    ...(fieldAuth.get(field) !== undefined ? { auth: fieldAuth.get(field) } : {}),
+    ...fieldAuth.get(field),
   }));
-  const primaryAuth = fieldAuth.get(mobile.primary_field);
-  const secondaryAuth = mobile.secondary_field === undefined ? undefined : fieldAuth.get(mobile.secondary_field);
+  const primaryAuth = fieldAuth.get(mobile.primary_field) ?? {};
+  const secondaryAuth = mobile.secondary_field === undefined ? {} : fieldAuth.get(mobile.secondary_field) ?? {};
   return `<div className="open-ui-mobile-cards">
           {loading ? (
             <Typography.Text type="secondary">Loading...</Typography.Text>
           ) : rows.map((row, index) => (
             <Card key={String(row.name ?? index)} size="small" style={{ marginBottom: 12 }}>
-              {can(${JSON.stringify(primaryAuth)}, authContext) ? <Typography.Text strong>{String(row[${JSON.stringify(mobile.primary_field)}] ?? "")}</Typography.Text> : null}
-              ${mobile.secondary_field !== undefined ? `{can(${JSON.stringify(secondaryAuth)}, authContext) ? <Typography.Paragraph type="secondary">{String(row[${JSON.stringify(mobile.secondary_field)}] ?? "")}</Typography.Paragraph> : null}` : ""}
-              {${JSON.stringify(metadataFields)}.filter((field) => can(field.auth, authContext)).map((field) => (
-                <Typography.Paragraph key={field.field} style={{ marginBottom: 4 }}>{field.label}: {String(row[field.field] ?? "")}</Typography.Paragraph>
+              {shouldRenderAuthSurface(${JSON.stringify(primaryAuth.auth)}, ${JSON.stringify(primaryAuth.unauthorized)}, authContext) ? <Typography.Text strong>{authText(row[${JSON.stringify(mobile.primary_field)}], ${JSON.stringify(primaryAuth.auth)}, ${JSON.stringify(primaryAuth.unauthorized)}, authContext)}</Typography.Text> : null}
+              ${mobile.secondary_field !== undefined ? `{shouldRenderAuthSurface(${JSON.stringify(secondaryAuth.auth)}, ${JSON.stringify(secondaryAuth.unauthorized)}, authContext) ? <Typography.Paragraph type="secondary">{authText(row[${JSON.stringify(mobile.secondary_field)}], ${JSON.stringify(secondaryAuth.auth)}, ${JSON.stringify(secondaryAuth.unauthorized)}, authContext)}</Typography.Paragraph> : null}` : ""}
+              {${JSON.stringify(metadataFields)}.filter((field) => shouldRenderAuthSurface(field.auth, field.unauthorized, authContext)).map((field) => (
+                <Typography.Paragraph key={field.field} style={{ marginBottom: 4 }}>{field.label}: {authText(row[field.field], field.auth, field.unauthorized, authContext)}</Typography.Paragraph>
               ))}
             </Card>
           ))}
@@ -186,10 +205,15 @@ function compileMobileCards(table: TableSpec, fieldAuth: Map<string, AuthRequire
         <style>{\`.open-ui-mobile-cards { display: none; } @media (max-width: 768px) { .open-ui-table-desktop { display: none; } .open-ui-mobile-cards { display: block; } }\`}</style>`;
 }
 
-function fieldAuthMap(collections: ResourceCollectionSpec[], collectionName: string): Map<string, AuthRequirement> {
+interface FieldReadAuth {
+  auth?: AuthRequirement;
+  unauthorized?: "hide" | "redact";
+}
+
+function fieldAuthMap(collections: ResourceCollectionSpec[], collectionName: string): Map<string, FieldReadAuth> {
   return new Map(
     (collections.find((collection) => collection.name === collectionName)?.fields ?? [])
-      .flatMap((field) => field.auth?.read === undefined ? [] : [[field.name, field.auth.read] as const]),
+      .flatMap((field) => field.auth?.read === undefined ? [] : [[field.name, { auth: field.auth.read, unauthorized: field.auth.unauthorized ?? "hide" }] as const]),
   );
 }
 
@@ -221,6 +245,55 @@ function actionSpecMap(collections: ResourceCollectionSpec[], collectionName: st
   return new Map(
     (collections.find((collection) => collection.name === collectionName)?.actions ?? []).map((action) => [action.name, action]),
   );
+}
+
+function collectionRequirementsForRoute(route: UiRouteSpec, collections: ResourceCollectionSpec[]): AuthRequirement[] {
+  const collectionsByName = new Map(collections.map((collection) => [collection.name, collection]));
+  return Array.from(new Set(route.components.flatMap((component) => componentCollectionNames(component))))
+    .flatMap((collectionName) => {
+      const requirement = collectionsByName.get(collectionName)?.auth?.read;
+      return requirement === undefined ? [] : [requirement];
+    });
+}
+
+function componentCollectionNames(component: ComponentSpec): string[] {
+  if (component.kind === "filter_bar") return [readStringProp(component, "collection")].filter(Boolean);
+  if (component.kind === "table") return [readTable(component).collection];
+  if (component.kind === "detail_header") return [readDetail(component).collection];
+  return [];
+}
+
+function combineRequirements(requirements: Array<AuthRequirement | undefined>): AuthRequirement | undefined {
+  const present = requirements.filter((requirement): requirement is AuthRequirement => requirement !== undefined);
+  if (present.length === 0) return undefined;
+  if (present.length === 1) return present[0];
+  return { kind: "all", requirements: present };
+}
+
+function compileVideo(component: ComponentSpec): string {
+  const video = readVideo(component);
+  const sources = video.sources ?? [];
+  const style = {
+    width: "100%",
+    aspectRatio: video.aspect_ratio ?? "16/9",
+    objectFit: video.fit ?? "contain",
+    background: "#000",
+  };
+  return `<Card size="small"${video.title !== undefined ? ` title={${JSON.stringify(video.title)}}` : ""}>
+        <video
+          src={${JSON.stringify(video.src)}}
+          poster={${JSON.stringify(video.poster)}}
+          controls={${JSON.stringify(video.controls ?? true)}}
+          autoPlay={${JSON.stringify(video.autoplay ?? false)}}
+          muted={${JSON.stringify(video.muted ?? false)}}
+          loop={${JSON.stringify(video.loop ?? false)}}
+          playsInline={${JSON.stringify(video.plays_inline ?? true)}}
+          style={${JSON.stringify(style)}}
+        >
+          ${sources.map((source) => `<source src={${JSON.stringify(source.src)}}${source.type !== undefined ? ` type={${JSON.stringify(source.type)}}` : ""} />`).join("\n          ")}
+        </video>
+        ${video.caption !== undefined ? `<Typography.Paragraph type="secondary">{${JSON.stringify(video.caption)}}</Typography.Paragraph>` : ""}
+      </Card>`;
 }
 
 function compileChart(component: ComponentSpec): string {
@@ -271,6 +344,19 @@ function readDetail(component: ComponentSpec): DetailSpec {
     throw new Error(`detail component ${component.id} is missing detail`);
   }
   return detail as DetailSpec;
+}
+
+function readVideo(component: ComponentSpec): VideoSpec {
+  const video = (component as { video?: unknown }).video;
+  if (!video || typeof video !== "object") {
+    throw new Error(`video component ${component.id} is missing video`);
+  }
+  return video as VideoSpec;
+}
+
+function readStringProp(component: ComponentSpec, name: string): string {
+  const value = (component as unknown as Record<string, unknown>)[name];
+  return typeof value === "string" ? value : "";
 }
 
 function antTableAlign(align: "start" | "center" | "end"): "left" | "center" | "right" {
