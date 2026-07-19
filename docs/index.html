@@ -120,14 +120,23 @@
         <h1>Open UI IR Design Docs</h1>
         <p>
           Canonical Markdown docs for the Open UI IR protocol, package system,
-          renderer targets, mobile hints, and auth implementation design.
+          renderer targets, mobile hints, auth, and PostgreSQL/SQLite backend DSL
+          design.
         </p>
       </div>
     </header>
     <main class="wrap">
       <h2 class="sectionTitle">Current Work</h2>
       <div class="grid">
-        <a class="doc primary" href="./auth-design.md">
+        <a class="doc primary" href="./baas-design.md">
+          <strong>AIP BaaS</strong>
+          <span>
+            AIP-first high-level DSL design for generating RPC/REST services,
+            PostgreSQL and SQLite migrations, handlers, SDKs, auth, realtime,
+            and storage.
+          </span>
+        </a>
+        <a class="doc" href="./auth-design.md">
           <strong>Auth Design</strong>
           <span>
             Auth requirement model, placement, renderer behavior,

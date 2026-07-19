@@ -72,6 +72,7 @@ AntD and React Mantine lower this to a playable `<video>` element.
 | [docs/feature-contract.md](docs/feature-contract.md) | Stable feature surface, validator guarantees, target manifests, and fixture policy. |
 | [docs/package-system.md](docs/package-system.md) | Multi-package rules that keep AntD and Mantine renderer dependencies out of each other's frontend bundles. |
 | [docs/general-framework-design.md](docs/general-framework-design.md) | Longer-term semantic/presentation/interaction/data-binding IR design. |
+| [docs/baas-design.md](docs/baas-design.md) | AIP-first high-level DSL design for a PostgreSQL-backed BaaS with optional SQLite compatibility. |
 
 ## Status
 
