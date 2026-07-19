@@ -13,7 +13,7 @@ policies, realtime behavior, and storage. The compiler generates AIP-compliant
 RPC services, HTTP transcoding, backend-specific migrations, server handlers,
 SDK types, and admin metadata.
 
-Working name in this document: `Litebase`.
+Working name in this document: `AIPbase`.
 
 ## Non-Goals
 
@@ -50,7 +50,7 @@ against YAML locations rather than generated proto lines.
 ## Product Shape
 
 ```text
-litebase.yaml
+aipbase.yaml
       |
       v
 DSL parser
@@ -88,7 +88,7 @@ implementation choices:
 | Embedded backend | SQLite is supported for local, test, and explicitly single-node deployments; it is never assumed to provide distributed coordination. |
 | Database isolation | PostgreSQL maps a logical `Database` to a private schema by default; SQLite maps it to one file. Dedicated PostgreSQL databases are an optional deployment profile. |
 | Resource IDs | Server-generated lowercase IDs are the default. A resource may require a user-specified ID explicitly. |
-| Updates | `update_mask` is required in V1. Full replacement and inferred masks are not supported. |
+| Updates | `update_mask` is optional as required by AIP-134. Omission means all populated mutable fields; `*` means full replacement of mutable fields. Explicit masks remain recommended. |
 | Concurrency | Mutable resources carry an unannotated `etag`. Update and delete enforce it when the DSL marks freshness validation as required. |
 | Transactions | Every unary mutation runs in one backend transaction, including resource writes, event outbox writes, and storage metadata changes. |
 | Compatibility | DSL changes are classified before migration generation. Destructive or ambiguous changes require an explicit migration block. |
@@ -99,12 +99,12 @@ capability during generation; it cannot silently weaken API behavior.
 
 ## Authoring DSL and Semantic IR
 
-`litebase.yaml` is optimized for people. The compiler parses it into a closed,
+`aipbase.yaml` is optimized for people. The compiler parses it into a closed,
 versioned IR before validation or generation:
 
 ```ts
 interface ApiIrV1 {
-  irVersion: "litebase.ir/v1alpha1";
+  irVersion: "aipbase.ir/v1alpha1";
   api: ApiIdentity;
   resources: ResourceIr[];
   auth?: AuthIr;
@@ -189,11 +189,11 @@ resource is returned.
 ## DSL Example
 
 ```yaml
-dsl_version: litebase.dsl/v1alpha1
+dsl_version: aipbase.dsl/v1alpha1
 
 api:
-  service: example.litebase.dev
-  proto_package: litebase.example.v1
+  service: example.aipbase.dev
+  proto_package: aipbase.example.v1
   title: Example API
   version: v1
 
@@ -212,7 +212,7 @@ databases:
 resources:
   - type: Post
     plural: posts
-    resource_type: example.litebase.dev/Post
+    resource_type: example.aipbase.dev/Post
     pattern: projects/{project}/databases/{database}/posts/{post}
     table: posts
 
@@ -229,7 +229,7 @@ resources:
         type: string
       - name: author
         type: string
-        resource_reference: example.litebase.dev/User
+        resource_reference: example.aipbase.dev/User
         required: true
       - name: published
         type: bool
@@ -291,7 +291,7 @@ storage:
 ```proto
 syntax = "proto3";
 
-package litebase.example.v1;
+package aipbase.example.v1;
 
 import "google/api/field_behavior.proto";
 import "google/api/resource.proto";
@@ -299,7 +299,7 @@ import "google/protobuf/timestamp.proto";
 
 message Post {
   option (google.api.resource) = {
-    type: "example.litebase.dev/Post"
+    type: "example.aipbase.dev/Post"
     pattern: "projects/{project}/databases/{database}/posts/{post}"
     singular: "post"
     plural: "posts"
@@ -311,7 +311,7 @@ message Post {
   string author = 4 [
     (google.api.field_behavior) = REQUIRED,
     (google.api.resource_reference) = {
-      type: "example.litebase.dev/User"
+      type: "example.aipbase.dev/User"
     }
   ];
   bool published = 5;
@@ -374,14 +374,14 @@ service PostService {
 message GetPostRequest {
   string name = 1 [
     (google.api.field_behavior) = REQUIRED,
-    (google.api.resource_reference) = { type: "example.litebase.dev/Post" }
+    (google.api.resource_reference) = { type: "example.aipbase.dev/Post" }
   ];
 }
 
 message ListPostsRequest {
   string parent = 1 [
     (google.api.field_behavior) = REQUIRED,
-    (google.api.resource_reference) = { child_type: "example.litebase.dev/Post" }
+    (google.api.resource_reference) = { child_type: "example.aipbase.dev/Post" }
   ];
   int32 page_size = 2 [(google.api.field_behavior) = OPTIONAL];
   string page_token = 3 [(google.api.field_behavior) = OPTIONAL];
@@ -397,7 +397,7 @@ message ListPostsResponse {
 message CreatePostRequest {
   string parent = 1 [
     (google.api.field_behavior) = REQUIRED,
-    (google.api.resource_reference) = { child_type: "example.litebase.dev/Post" }
+    (google.api.resource_reference) = { child_type: "example.aipbase.dev/Post" }
   ];
   Post post = 2 [(google.api.field_behavior) = REQUIRED];
   string post_id = 3 [(google.api.field_behavior) = OPTIONAL];
@@ -405,13 +405,13 @@ message CreatePostRequest {
 
 message UpdatePostRequest {
   Post post = 1 [(google.api.field_behavior) = REQUIRED];
-  google.protobuf.FieldMask update_mask = 2 [(google.api.field_behavior) = REQUIRED];
+  google.protobuf.FieldMask update_mask = 2 [(google.api.field_behavior) = OPTIONAL];
 }
 
 message DeletePostRequest {
   string name = 1 [
     (google.api.field_behavior) = REQUIRED,
-    (google.api.resource_reference) = { type: "example.litebase.dev/Post" }
+    (google.api.resource_reference) = { type: "example.aipbase.dev/Post" }
   ];
   string etag = 2 [(google.api.field_behavior) = REQUIRED];
 }
@@ -459,7 +459,7 @@ private schema per logical `Database` resource:
 
 ```text
 PostgreSQL database
-  _litebase                  control plane tables
+  _aipbase                  control plane tables
   db_01j...k7                generated app tables + event outbox
   db_01j...p2                generated app tables + event outbox
 ```
@@ -557,17 +557,17 @@ SQLite runtime invariants:
 Logical system tables exist in both backends:
 
 ```text
-_litebase_projects
-_litebase_databases
-_litebase_migrations
-_litebase_users
-_litebase_sessions
-_litebase_api_keys
-_litebase_policy_rules
-_litebase_events
-_litebase_event_consumers
-_litebase_storage_buckets
-_litebase_storage_objects
+_aipbase_projects
+_aipbase_databases
+_aipbase_migrations
+_aipbase_users
+_aipbase_sessions
+_aipbase_api_keys
+_aipbase_policy_rules
+_aipbase_events
+_aipbase_event_consumers
+_aipbase_storage_buckets
+_aipbase_storage_objects
 ```
 
 The control store owns projects, database registrations, users, sessions, API
@@ -637,7 +637,7 @@ outside portable DSL guarantees.
 Migration application is transactional where the selected backend permits it.
 PostgreSQL and SQLite migration artifacts have separate digests. The runtime
 records the DSL digest, logical plan digest, backend kind, and SQL digest in
-`_litebase_migrations`, and refuses to start when an applied migration ID has
+`_aipbase_migrations`, and refuses to start when an applied migration ID has
 different content or belongs to another backend.
 
 ## Resource Name Mapping
@@ -677,7 +677,7 @@ opaque signed payloads containing:
 ```json
 {
   "version": 1,
-  "resource": "example.litebase.dev/Post",
+  "resource": "example.aipbase.dev/Post",
   "parent": "projects/acme/databases/main",
   "order_by": [
     { "field": "update_time", "direction": "desc" },
@@ -734,9 +734,11 @@ Updates use field masks. The runtime:
 - checks `etag` when provided
 - emits an update event
 
-If `update_mask` is omitted, the runtime returns `INVALID_ARGUMENT`. A wildcard
-mask is not accepted in V1. When freshness validation is required, a missing
-etag is `INVALID_ARGUMENT` and a stale etag is `ABORTED`.
+If `update_mask` is omitted, the runtime infers a mask containing every
+populated mutable field, as required by AIP-134. The special `*` mask performs a
+full replacement of mutable fields. Directly named output-only fields are
+ignored; unknown paths return `INVALID_ARGUMENT`. When freshness validation is
+required, a missing etag is `INVALID_ARGUMENT` and a stale etag is `ABORTED`.
 
 ## Transaction and Consistency Model
 
@@ -748,7 +750,7 @@ write reservation before policy-dependent reads:
    transaction.
 2. Read any row needed for ownership, existence, or etag checks.
 3. Apply the mutation and relational constraints.
-4. Insert the realtime outbox event in `_litebase_events`.
+4. Insert the realtime outbox event in `_aipbase_events`.
 5. Commit before returning the fully populated resource.
 
 After a successful mutation returns, a subsequent get on the same database sees
@@ -880,7 +882,7 @@ does not depend on PostgreSQL logical replication or SQLite file observation:
 generated mutation handler
   -> backend transaction
   -> write resource row
-  -> write _litebase_events row
+  -> write _aipbase_events row
   -> commit
   -> backend wake-up mechanism
   -> event worker reads durable event
@@ -904,7 +906,7 @@ Realtime guarantees:
 - Delivery is at-least-once; clients should dedupe by event name.
 
 Each PostgreSQL runtime instance has a unique consumer ID and durable cursor in
-`_litebase_event_consumers`. Every instance advances its own cursor so events
+`_aipbase_event_consumers`. Every instance advances its own cursor so events
 reach WebSocket clients connected to every node. Events use a monotonically
 ordered backend sequence; timestamps are metadata, not ordering keys. Retention
 keeps a reconnect window and expires abandoned consumer cursors by lease.
@@ -914,7 +916,7 @@ WebSocket subscribe request:
 ```json
 {
   "parent": "projects/acme/databases/main",
-  "resource_type": "example.litebase.dev/Post",
+  "resource_type": "example.aipbase.dev/Post",
   "filter": "author = \"projects/acme/auth/users/me\""
 }
 ```
@@ -934,7 +936,7 @@ projects/{project}/storage/buckets/{bucket}/objects/{object}
 Object metadata table:
 
 ```sql
-create table _litebase_storage_objects (
+create table _aipbase_storage_objects (
   name text primary key,
   bucket text not null,
   object_id text not null,
@@ -956,7 +958,7 @@ URLs are custom methods.
 TypeScript SDK should be generated from the same IR/proto:
 
 ```ts
-const client = new LitebaseClient({ endpoint, token });
+const client = new AIPbaseClient({ endpoint, token });
 
 const post = await client.posts.create({
   parent: "projects/acme/databases/main",
@@ -987,11 +989,11 @@ must remain AIP-shaped.
 
 ## Open UI IR Integration
 
-Litebase and Open UI IR remain separate compiler layers. Litebase owns the data
+AIPbase and Open UI IR remain separate compiler layers. AIPbase owns the data
 and service contract; Open UI IR owns renderer-neutral application intent.
 
 ```text
-Litebase semantic IR
+AIPbase semantic IR
   +--> proto / REST / PostgreSQL / SQLite / SDK
   +--> resource capability manifest
                               |
@@ -1002,18 +1004,17 @@ Open UI IR document ----------+
 The capability manifest exposes resource fields, enum labels, readable and
 writable field behavior, filter operators, orderable fields, method names, and
 auth requirements. Open UI IR may consume it to validate bindings and generate
-CRUD screens, but backend policy remains authoritative. Litebase must not embed
+CRUD screens, but backend policy remains authoritative. AIPbase must not embed
 AntD, Mantine, or another renderer dependency.
 
 ## Repository Ownership
 
-The design may incubate in this repository, but implementation should live in a
-dedicated Litebase repository. A backend runtime, migration engine, auth system,
-and generated SDK release cycle are materially different from Open UI IR's
-renderer compiler lifecycle.
+The implementation lives in the dedicated `Shuozeli/aipbase` repository. A
+backend runtime, migration engine, auth system, and generated SDK release cycle
+are materially different from Open UI IR's renderer compiler lifecycle.
 
 The integration boundary should be one small package in this workspace that
-consumes Litebase capability manifests. Neither repository imports the other's
+consumes AIPbase capability manifests. Neither repository imports the other's
 compiler internals. This avoids forcing frontend users to install database
 drivers, tonic, auth, or server dependencies and allows either project to
 version independently.
@@ -1040,21 +1041,21 @@ checks.
 Initial commands:
 
 ```bash
-litebase init
-litebase check litebase.yaml
-litebase generate proto --out gen/proto
-litebase generate sql --backend postgresql --out migrations/postgresql
-litebase generate sql --backend sqlite --out migrations/sqlite
-litebase migrate --runtime litebase.runtime.yaml
-litebase serve --runtime litebase.runtime.yaml --config litebase.yaml
-litebase console --runtime litebase.runtime.yaml
+aipbase init
+aipbase check aipbase.yaml
+aipbase generate proto --out gen/proto
+aipbase generate sql --backend postgresql --out migrations/postgresql
+aipbase generate sql --backend sqlite --out migrations/sqlite
+aipbase migrate --runtime aipbase.runtime.yaml
+aipbase serve --runtime aipbase.runtime.yaml --config aipbase.yaml
+aipbase console --runtime aipbase.runtime.yaml
 ```
 
 Backend credentials and deployment topology do not belong in the portable API
 DSL. They live in a separate runtime configuration:
 
 ```yaml
-runtime_version: litebase.runtime/v1alpha1
+runtime_version: aipbase.runtime/v1alpha1
 backend:
   kind: postgresql
   url_env: DATABASE_URL
@@ -1066,14 +1067,14 @@ pool:
 Local development may select SQLite instead:
 
 ```yaml
-runtime_version: litebase.runtime/v1alpha1
+runtime_version: aipbase.runtime/v1alpha1
 backend:
   kind: sqlite
-  data_dir: ./.litebase/data
+  data_dir: ./.aipbase/data
   single_process: true
 ```
 
-`litebase check` must fail on:
+`aipbase check` must fail on:
 
 - missing resource patterns
 - table-like public API declarations
@@ -1131,22 +1132,22 @@ type mapping across both SQL backends.
 
 ```text
 crates/
-  litebase-ir          versioned semantic IR and diagnostics
-  litebase-dsl         YAML/JSON parser and normalization
-  litebase-aip         AIP validation and proto descriptors
-  litebase-store       backend-neutral plans and repository contracts
-  litebase-postgres    PostgreSQL SQL, migrations, pools, repositories
-  litebase-sqlite      SQLite SQL, migrations, files, repositories
-  litebase-policy      typed policy compiler and evaluator
-  litebase-runtime     auth, handlers, transactions, realtime
-  litebase-codegen     proto, OpenAPI, TypeScript, Open UI IR manifests
-  litebase-cli         check, generate, migrate, serve
+  aipbase-ir          versioned semantic IR and diagnostics
+  aipbase-dsl         YAML/JSON parser and normalization
+  aipbase-aip         AIP validation and proto descriptors
+  aipbase-store       backend-neutral plans and repository contracts
+  aipbase-postgres    PostgreSQL SQL, migrations, pools, repositories
+  aipbase-sqlite      SQLite SQL, migrations, files, repositories
+  aipbase-policy      typed policy compiler and evaluator
+  aipbase-runtime     auth, handlers, transactions, realtime
+  aipbase-codegen     proto, OpenAPI, TypeScript, Open UI IR manifests
+  aipbase-cli         check, generate, migrate, serve
 packages/
   sdk-typescript       generated runtime client support
   admin-console        optional admin application
 ```
 
-Dependencies point inward toward `litebase-ir`. The DSL package cannot be used
+Dependencies point inward toward `aipbase-ir`. The DSL package cannot be used
 by runtime handlers, and PostgreSQL or SQLite details cannot appear in generated
 public API descriptors. Backend crates must pass the same repository
 conformance suite.
@@ -1203,20 +1204,17 @@ These do not block the first vertical slice:
 
 ## Immediate Next Steps
 
-1. Keep `Litebase` as the design codename; choose the public name before the
-   first published package.
-2. Define `litebase.dsl/v1alpha1` JSON Schema and the normalized
-   `litebase.ir/v1alpha1` Rust types.
-3. Add a lock-file format for proto field numbers and SQL identities.
-4. Implement `litebase check` for one resource, its name pattern, standard
-   methods, indexes, and policies.
-5. Generate one proto plus HTTP annotations and pass it through API Linter.
-6. Define backend repository conformance tests for type mapping, transactions,
-   etags, keyset pagination, filters, and the event outbox.
-7. Generate initial PostgreSQL and SQLite migrations from one logical plan.
-8. Build the `Post` vertical slice on PostgreSQL first: Create, Get, List,
-   Update, Delete, auth, etag, and event outbox.
-9. Run the same vertical slice against SQLite and reject unsupported deployment
-   capabilities at startup.
-10. Generate a TypeScript client and Open UI IR capability manifest from the
-   same semantic IR.
+The initial `Post` slice now covers the strict DSL and lock file, AIP proto and
+OpenAPI generation, PostgreSQL and SQLite migrations, transactional CRUD and
+event outbox repositories, shared backend conformance tests, and a TypeScript
+client plus Open UI IR capability manifest. The next implementation milestones
+are:
+
+1. Add refresh-token auth resources and Argon2id credential storage.
+2. Compile role and owner policy expressions into typed runtime checks.
+3. Generate handlers from the semantic IR instead of retaining a fixture-only
+   `Post` service implementation.
+4. Add migration diffing, explicit backfill expressions, and compatibility
+   classification.
+5. Add durable multi-node realtime consumers with PostgreSQL `LISTEN/NOTIFY`
+   used only as a wake-up mechanism.
